@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>港口码头吞吐量看板</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            padding: 24px 20px;
+            min-height: 100vh;
+        }
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 32px;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        .header {
+            background: #1e466e;
+            padding: 20px 28px;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .header h1 {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header h1::before { content: "⚓"; font-size: 2rem; }
+        .sub {
+            color: #bdd4e8;
+            margin-top: 8px;
+            font-size: 0.85rem;
+        }
+        .header-nav { display: flex; align-items: center; }
+        .header-nav a { color: #fff; text-decoration: none; font-size: 1.05rem; font-weight: 600; padding: 10px 22px; background: linear-gradient(135deg, #27775a 0%, #1e5c45 100%); border-radius: 30px; transition: all 0.3s; box-shadow: 0 4px 15px rgba(39,119,90,0.4); border: 1px solid rgba(255,255,255,0.2); }
+        .header-nav a:hover { background: linear-gradient(135deg, #2d8a6a 0%, #27775a 100%); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(39,119,90,0.5); }
+        .loading-tip { color: #c0392b; font-weight: 500; font-size: 0.9rem; }
+        .loading-tip::after { content: ''; animation: dots 1.5s infinite; }
+        @keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } 100% { content: ''; } }
+        .content {
+            padding: 24px 28px 32px;
+        }
+        .upload-card {
+            background: #f8fafd;
+            border-radius: 24px;
+            padding: 20px 24px;
+            margin-bottom: 28px;
+            border: 1px solid #e2edf7;
+        }
+        .upload-area {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .btn {
+            background: #2c7da0;
+            border: none;
+            color: white;
+            padding: 8px 22px;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn:hover {
+            background: #1f5f7a;
+            transform: translateY(-1px);
+        }
+        .btn-green { background: #2a6b47; }
+        .btn-green:hover { background: #1e5538; }
+        .btn-orange { background: #d98c2b; }
+        .btn-orange:hover { background: #b8731f; }
+        .btn-red { background: #c0392b; }
+        .btn-red:hover { background: #a93226; }
+        .btn-purple { background: #6c3483; }
+        .btn-purple:hover { background: #5b2c6f; }
+        .file-info {
+            font-size: 0.85rem;
+            background: #eef2f5;
+            padding: 5px 14px;
+            border-radius: 30px;
+        }
+        .msg-area {
+            margin-top: 14px;
+            font-size: 0.85rem;
+        }
+        .months-section {
+            margin: 20px 0 24px;
+        }
+        .section-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #1e466e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .month-tag {
+            background: #eef2f9;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #1e466e;
+            border-left: 3px solid #2c7da0;
+        }
+        .query-bar {
+            background: white;
+            border-radius: 28px;
+            padding: 16px 24px;
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            border: 1px solid #e6edf4;
+        }
+        .query-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 18px;
+        }
+        .mode-switch {
+            background: #f0f4f9;
+            border-radius: 48px;
+            padding: 4px;
+            display: inline-flex;
+        }
+        .mode-btn {
+            background: transparent;
+            border: none;
+            padding: 6px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            color: #4a627a;
+        }
+        .mode-btn.active {
+            background: #2c7da0;
+            color: white;
+        }
+        .select-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f9fbfd;
+            padding: 5px 14px;
+            border-radius: 48px;
+            border: 1px solid #dfe8f0;
+        }
+        select {
+            padding: 6px 12px;
+            border-radius: 28px;
+            border: 1px solid #cbdbe0;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 24px;
+            border: 1px solid #eef2f8;
+            background: white;
+            margin-top: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        th, td {
+            padding: 12px 8px;
+            text-align: center;
+            border-bottom: 1px solid #eef2f8;
+        }
+        th {
+            background: #f1f6fc;
+            color: #1e3b5c;
+        }
+        .positive { color: #2c7da0 !important; font-weight: 500; }
+        .negative { color: #d9534f !important; font-weight: 500; }
+        .no-data { text-align: center; padding: 48px; color: #8ba0b5; }
+        .footer {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #7f8fa4;
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid #e2edf7;
+        }
+        .help-text {
+            font-size: 0.7rem;
+            color: #4a627a;
+            background: #eef2fa;
+            padding: 8px 12px;
+            border-radius: 20px;
+            margin-top: 12px;
+        }
+    </style>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+<div class="dashboard">
+    <div class="header">
+        <div>
+            <h1>按码头吞吐量统计分析</h1>
+            <div class="sub">上传月度统计表 · 数据实时统计 · 智能分析看板</div>
+        </div>
+        <div class="header-nav">
+            <a href="index.html">📦 分类货物统计分析</a>
+        </div>
+    </div>
+    <div class="content">
+        <div class="upload-card">
+            <div class="upload-area">
+                <input type="file" id="excelFile" accept=".xlsx, .xls" multiple style="display:none;">
+                <button class="btn" onclick="document.getElementById('excelFile').click()">📂 批量选择Excel</button>
+                <span id="fileName" class="file-info">未选择文件</span>
+                <button id="uploadBtn" class="btn" disabled>⬆️ 上传并存储</button>
+                <button id="exportAllBtn" class="btn btn-green">💾 导出全部数据</button>
+                <input type="file" id="importBackup" accept=".json" style="display:none;">
+                <button id="importBackupBtn" class="btn btn-orange">📥 导入备份文件</button>
+            </div>
+            <div class="help-text">💡 数据通过 Supabase 云端实时同步，所有用户共享同一数据库。</div>
+            <div id="uploadMsg" class="msg-area"></div>
+        </div>
+
+        <div class="months-section">
+            <div class="section-title">📅 已上传月份</div>
+            <div id="monthTags" class="tag-container loading-tip">加载中，数据较多，请稍后</div>
+        </div>
+
+        <div class="query-bar">
+            <div class="query-controls">
+                <div class="mode-switch" id="modeSwitch">
+                    <button class="mode-btn active" data-mode="single">📆 单月查询</button>
+                    <button class="mode-btn" data-mode="range">📊 时间段累计</button>
+                </div>
+                <div id="singleGroup" class="select-group"><label>月份：</label><select id="monthSelect"></select></div>
+                <div id="rangeGroup" class="select-group" style="display:none;"><label>开始：</label><select id="startMonth"></select><label>结束：</label><select id="endMonth"></select></div>
+                <button id="queryBtn" class="btn">🔍 查询</button>
+                <span id="queryLoading" style="display:none; font-size:0.85rem; color:#2c7da0; font-weight:500; margin-left:8px;">查询中，请稍后...</span>
+                <div style="display: flex; gap: 10px;">
+                    <button id="momBtn" class="btn analytics-btn" disabled>📈 环比</button>
+                    <button id="yoyBtn" class="btn analytics-btn" disabled>📉 同比</button>
+                </div>
+            </div>
+            <button id="exportBtn" class="btn btn-green">📎 导出当前数据</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table id="dataTable">
+                <thead><tr id="headerRow"><th>序号</th><th>码头名称</th><th>企业代码</th><th>所属区县</th><th>月份/时间段</th><th>吞吐量(吨)</th><th id="annualHeader">年度累计(吨)</th></tr></thead>
+                <tbody id="tableBody"><tr><td colspan="7" class="no-data">请选择查询条件后点击查询</td></tr></tbody>
+            </table>
+        </div>
+        <div class="footer">正数蓝色，负数红色。数据自动保存到当前存储模式。</div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://yzqqkslbixqqgzjzekku.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6cXFrc2xiaXhxcWd6anpla2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMTYzNjcsImV4cCI6MjA5MTc5MjM2N30.8sXLtcreqjchJeI3F3oxsluKEBH8NZ3lgtWcKK6aOnY';
+    const TABLE_NAME = 'gangkou_data';
+
+    let currentQueryMode = 'single';
+    let currentData = [];
+    let activeAnalytics = null;
+    let pendingCalc = false;
+
+    function sbHeaders(extra = {}) {
+        return {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation',
+            ...extra
+        };
+    }
+
+    // ==================== Supabase REST API ====================
+    function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    async function supabaseGetAll() {
+        const allRecords = [];
+        let offset = 0;
+        const pageSize = 100;
+        let hasMore = true;
+
+        while (hasMore) {
+            const url = `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?select=*&order=id&offset=${offset}&limit=${pageSize}`;
+            const resp = await fetch(url, { headers: { ...sbHeaders(), 'Prefer': 'return=representation,count=exact' } });
+            if (!resp.ok) {
+                const errBody = await resp.text();
+                throw new Error(`Supabase查询失败(${resp.status}): ${errBody}`);
+            }
+            const rows = await resp.json();
+            allRecords.push(...rows);
+
+            const contentRange = resp.headers.get('Content-Range');
+            if (contentRange) {
+                const total = parseInt(contentRange.split('/')[1]);
+                if (!isNaN(total) && offset + rows.length >= total) {
+                    hasMore = false;
+                } else if (rows.length < pageSize) {
+                    hasMore = false;
+                } else {
+                    offset += pageSize;
+                }
+            } else {
+                if (rows.length < pageSize) {
+                    hasMore = false;
+                } else {
+                    offset += pageSize;
+                }
+            }
+        }
+
+        return allRecords.map(r => ({
+            id: r.id,
+            district: r.district,
+            company_code: r.company_code,
+            dock_name: r.dock_name,
+            period: r.period,
+            monthly_tonnage: Number(r.monthly_tonnage) || 0
+        }));
+    }
+
+    async function supabaseUpsert(records) {
+        const rows = records.map(r => ({
+            id: r.id,
+            district: r.district,
+            company_code: r.company_code,
+            dock_name: r.dock_name,
+            period: r.period,
+            monthly_tonnage: r.monthly_tonnage
+        }));
+
+        const batchSize = 50;
+        let savedCount = 0;
+        for (let i = 0; i < rows.length; i += batchSize) {
+            const batch = rows.slice(i, i + batchSize);
+            const url = `${SUPABASE_URL}/rest/v1/${TABLE_NAME}`;
+
+            let retries = 3;
+            let lastError = null;
+            while (retries > 0) {
+                try {
+                    const resp = await fetch(url, {
+                        method: 'POST',
+                        headers: sbHeaders({ 'Prefer': 'return=representation,resolution=merge-duplicates' }),
+                        body: JSON.stringify(batch)
+                    });
+                    if (!resp.ok) {
+                        const errBody = await resp.text();
+                        if ((resp.status === 429 || resp.status >= 500) && retries > 1) {
+                            retries--;
+                            await delay(1500);
+                            continue;
+                        }
+                        throw new Error(`Supabase写入失败(${resp.status}): ${errBody}`);
+                    }
+                    const result = await resp.json();
+                    savedCount += Array.isArray(result) ? result.length : batch.length;
+                    break;
+                } catch (err) {
+                    lastError = err;
+                    if (retries <= 1) throw lastError;
+                    retries--;
+                    await delay(1500);
+                }
+            }
+
+            if (i + batchSize < rows.length) {
+                await delay(300);
+            }
+        }
+        return savedCount;
+    }
+
+    async function supabaseGetCount() {
+        try {
+            const url = `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?select=id&limit=1`;
+            const resp = await fetch(url, { headers: { ...sbHeaders(), 'Prefer': 'count=exact' } });
+            if (!resp.ok) return -1;
+            await resp.json();
+            const contentRange = resp.headers.get('Content-Range');
+            if (contentRange) {
+                const total = parseInt(contentRange.split('/')[1]);
+                return isNaN(total) ? -1 : total;
+            }
+            return -1;
+        } catch (e) {
+            return -1;
+        }
+    }
+
+    async function supabaseGetMonthlyTonnage(company_code, period) {
+        const url = `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?select=monthly_tonnage&company_code=eq.${encodeURIComponent(company_code)}&period=eq.${encodeURIComponent(period)}`;
+        const resp = await fetch(url, { headers: sbHeaders() });
+        if (!resp.ok) return null;
+        const rows = await resp.json();
+        return rows.length > 0 ? Number(rows[0].monthly_tonnage) : null;
+    }
+
+    async function supabaseGetUploadedMonths() {
+        const allPeriods = [];
+        let offset = 0;
+        const pageSize = 100;
+        let hasMore = true;
+        while (hasMore) {
+            const url = `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?select=period&order=period&offset=${offset}&limit=${pageSize}`;
+            const resp = await fetch(url, { headers: sbHeaders() });
+            if (!resp.ok) {
+                const errBody = await resp.text();
+                throw new Error(`Supabase查询失败(${resp.status}): ${errBody}`);
+            }
+            const rows = await resp.json();
+            allPeriods.push(...rows);
+            if (rows.length < pageSize) hasMore = false;
+            else offset += pageSize;
+        }
+        const monthSet = new Set(allPeriods.map(r => r.period));
+        return Array.from(monthSet).sort();
+    }
+
+    async function supabaseClearData() {
+        const url = `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?id=not.is.null`;
+        const resp = await fetch(url, {
+            method: 'DELETE',
+            headers: sbHeaders({ 'Prefer': 'return=minimal' })
+        });
+        if (!resp.ok) {
+            const errBody = await resp.text();
+            throw new Error(`Supabase清空失败(${resp.status}): ${errBody}`);
+        }
+    }
+
+    async function supabaseTestConnection() {
+        const url = `${SUPABASE_URL}/rest/v1/${TABLE_NAME}?select=id&limit=1`;
+        const resp = await fetch(url, { headers: sbHeaders() });
+        if (!resp.ok) {
+            const errBody = await resp.text();
+            throw new Error(`连接测试失败(${resp.status}): ${errBody}`);
+        }
+        await resp.json();
+        return true;
+    }
+
+    // ==================== 统一数据接口 ====================
+    async function getAllData() {
+        return await supabaseGetAll();
+    }
+
+    async function saveData(records) {
+        return await supabaseUpsert(records);
+    }
+
+    async function getMonthlyTonnage(company_code, period) {
+        return await supabaseGetMonthlyTonnage(company_code, period);
+    }
+
+    async function getUploadedMonths() {
+        return await supabaseGetUploadedMonths();
+    }
+
+    // ==================== 业务逻辑 ====================
+    async function querySingleMonth(month) {
+        const all = await getAllData();
+        const currentMonthRecords = all.filter(rec => rec.period === month);
+        if (currentMonthRecords.length === 0) return [];
+
+        const year = month.slice(0,4);
+        const result = [];
+        for (let rec of currentMonthRecords) {
+            const code = rec.company_code;
+            const annualRecords = all.filter(r => r.company_code === code && r.period >= `${year}-01` && r.period <= month);
+            const annualTotal = annualRecords.reduce((sum, r) => sum + r.monthly_tonnage, 0);
+            const companyAll = all.filter(r => r.company_code === code && r.period <= month);
+            companyAll.sort((a,b) => b.period.localeCompare(a.period));
+            const latestDock = companyAll.length > 0 ? companyAll[0].dock_name : rec.dock_name;
+            result.push({
+                dock_name: latestDock,
+                company_code: code,
+                district: rec.district,
+                periodLabel: month.replace('-', '年') + '月',
+                throughput: rec.monthly_tonnage,
+                annual_total: annualTotal,
+                month: month,
+                company_code_raw: code
+            });
+        }
+        result.sort((a,b) => b.throughput - a.throughput);
+        return result;
+    }
+
+    async function queryRange(startMonth, endMonth) {
+        const all = await getAllData();
+        if (startMonth > endMonth) throw new Error('开始月份不能晚于结束月份');
+        const rangeRecords = all.filter(rec => rec.period >= startMonth && rec.period <= endMonth);
+        if (rangeRecords.length === 0) return [];
+
+        const map = new Map();
+        for (let rec of rangeRecords) {
+            const code = rec.company_code;
+            if (!map.has(code)) {
+                map.set(code, { company_code: code, district: rec.district, throughput_sum: 0 });
+            }
+            map.get(code).throughput_sum += rec.monthly_tonnage;
+        }
+
+        const result = [];
+        for (let [code, group] of map.entries()) {
+            const companyAll = all.filter(r => r.company_code === code && r.period <= endMonth);
+            companyAll.sort((a,b) => b.period.localeCompare(a.period));
+            const latestDock = companyAll.length > 0 ? companyAll[0].dock_name : '';
+            result.push({
+                dock_name: latestDock,
+                company_code: code,
+                district: group.district,
+                periodLabel: `${startMonth.replace('-', '.')}—${endMonth.replace('-', '.')}`,
+                throughput: group.throughput_sum,
+                annual_total: null
+            });
+        }
+        result.sort((a,b) => b.throughput - a.throughput);
+        return result;
+    }
+
+    // ==================== UI 渲染函数 ====================
+    function escapeHtml(str) { return String(str).replace(/[&<>]/g, m => m==='&'?'&amp;': m==='<'?'&lt;': m==='>'?'&gt;': m); }
+    function showMessage(msg, type) {
+        const msgDiv = document.getElementById('uploadMsg');
+        const cls = type === 'error' ? 'error' : (type === 'warning' ? 'warning' : 'success');
+        msgDiv.innerHTML = `<div style="background:#eef2fa; border-left:4px solid ${cls==='success'?'#2c7da0':'#e67e22'}; padding:8px 14px; border-radius:20px;">${msg}</div>`;
+        setTimeout(() => { msgDiv.innerHTML = ''; }, 6000);
+    }
+
+    function removeExtraColumn() {
+        const extraTh = document.getElementById('extraTh');
+        if (extraTh) extraTh.remove();
+        const tbody = document.getElementById('tableBody');
+        if (tbody) {
+            const rows = tbody.querySelectorAll('tr');
+            const headerCount = document.querySelectorAll('#headerRow th').length;
+            for (let row of rows) {
+                if (row.cells.length > headerCount) row.deleteCell(-1);
+            }
+        }
+    }
+
+    function addExtraColumnHeader(columnName) {
+        const headerRow = document.getElementById('headerRow');
+        let extraTh = document.getElementById('extraTh');
+        if (extraTh) extraTh.remove();
+        const newTh = document.createElement('th');
+        newTh.id = 'extraTh';
+        newTh.textContent = columnName;
+        const annualTh = document.getElementById('annualHeader');
+        if (annualTh && annualTh.parentNode === headerRow) {
+            headerRow.insertBefore(newTh, annualTh.nextSibling);
+        } else {
+            headerRow.appendChild(newTh);
+        }
+    }
+
+    function addLoadingCells() {
+        const tbody = document.getElementById('tableBody');
+        const rows = tbody.querySelectorAll('tr');
+        for (let row of rows) {
+            if (row.cells.length === 0 || row.innerText.includes('没有找到数据') || row.innerText.includes('请选择查询条件')) continue;
+            const td = document.createElement('td');
+            td.textContent = '统计中...';
+            td.style.color = '#888';
+            td.style.fontStyle = 'italic';
+            td.className = '';
+            row.appendChild(td);
+        }
+    }
+
+    async function computeAndUpdateAnalytics(extraType) {
+        if (!currentData || currentData.length === 0) return;
+        if (pendingCalc) return;
+        pendingCalc = true;
+        try {
+            const allData = await getAllData();
+            const tonnageMap = new Map();
+            for (const rec of allData) {
+                tonnageMap.set(`${rec.company_code}_${rec.period}`, rec.monthly_tonnage);
+            }
+
+            const rows = document.querySelectorAll('#tableBody tr');
+            for (let idx = 0; idx < currentData.length; idx++) {
+                const item = currentData[idx];
+                const row = rows[idx];
+                if (!row) continue;
+                const cell = row.cells[row.cells.length - 1];
+                if (!cell) continue;
+
+                let value = null;
+                let display = '';
+                if (extraType === 'mom') {
+                    const [year, month] = item.month.split('-');
+                    if (month === '01') {
+                        display = '不涉及';
+                    } else {
+                        const prevMonth = `${year}-${(parseInt(month)-1).toString().padStart(2,'0')}`;
+                        const prevTonnage = tonnageMap.get(`${item.company_code_raw}_${prevMonth}`);
+                        if (prevTonnage === undefined || prevTonnage === null) {
+                            display = '数据不全';
+                        } else {
+                            const inc = item.throughput - prevTonnage;
+                            value = inc;
+                            display = inc.toLocaleString();
+                        }
+                    }
+                } else if (extraType === 'yoy') {
+                    const [year, month] = item.month.split('-');
+                    const lastYear = (parseInt(year)-1).toString();
+                    const lastYearMonth = `${lastYear}-${month}`;
+                    const lastYearTonnage = tonnageMap.get(`${item.company_code_raw}_${lastYearMonth}`);
+                    if (lastYearTonnage === undefined || lastYearTonnage === null) {
+                        display = '数据不全';
+                    } else {
+                        const inc = item.throughput - lastYearTonnage;
+                        value = inc;
+                        display = inc.toLocaleString();
+                    }
+                }
+
+                cell.textContent = display;
+                cell.style.fontStyle = 'normal';
+                cell.style.color = '';
+                if (typeof value === 'number') {
+                    if (value > 0) cell.className = 'positive';
+                    else if (value < 0) cell.className = 'negative';
+                    else cell.className = '';
+                } else {
+                    cell.className = '';
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            showMessage('计算失败: ' + err.message, 'error');
+        } finally {
+            pendingCalc = false;
+        }
+    }
+
+    async function handleMom() {
+        if (currentQueryMode !== 'single') return;
+        if (!currentData.length) { showMessage('请先查询单月数据', 'warning'); return; }
+        if (activeAnalytics === 'mom') return;
+        removeExtraColumn();
+        addExtraColumnHeader('环比增量(吨)');
+        addLoadingCells();
+        activeAnalytics = 'mom';
+        document.getElementById('momBtn').classList.add('active');
+        document.getElementById('yoyBtn').classList.remove('active');
+        await computeAndUpdateAnalytics('mom');
+    }
+
+    async function handleYoy() {
+        if (currentQueryMode !== 'single') return;
+        if (!currentData.length) { showMessage('请先查询单月数据', 'warning'); return; }
+        if (activeAnalytics === 'yoy') return;
+        removeExtraColumn();
+        addExtraColumnHeader('同比增量(吨)');
+        addLoadingCells();
+        activeAnalytics = 'yoy';
+        document.getElementById('yoyBtn').classList.add('active');
+        document.getElementById('momBtn').classList.remove('active');
+        await computeAndUpdateAnalytics('yoy');
+    }
+
+    function renderBaseTable(data, mode) {
+        const tbody = document.getElementById('tableBody');
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="no-data">没有找到数据，请调整查询条件</td></tr>';
+            return;
+        }
+        let html = '';
+        if (mode === 'single') {
+            for (let idx = 0; idx < data.length; idx++) {
+                const item = data[idx];
+                const serial = idx + 1;
+                html += `<tr><td>${serial}</td><td>${escapeHtml(item.dock_name)}</td><td>${escapeHtml(item.company_code)}</td><td>${escapeHtml(item.district)}</td><td>${escapeHtml(item.periodLabel)}</td><td>${item.throughput.toLocaleString()}</td><td>${item.annual_total.toLocaleString()}</td></tr>`;
+            }
+        } else {
+            for (let idx = 0; idx < data.length; idx++) {
+                const item = data[idx];
+                const serial = idx + 1;
+                html += `<tr><td>${serial}</td><td>${escapeHtml(item.dock_name)}</td><td>${escapeHtml(item.company_code)}</td><td>${escapeHtml(item.district)}</td><td>${escapeHtml(item.periodLabel)}</td><td>${item.throughput.toLocaleString()}</td></tr>`;
+            }
+        }
+        tbody.innerHTML = html;
+    }
+
+    async function handleQuery() {
+        activeAnalytics = null;
+        document.getElementById('momBtn').classList.remove('active');
+        document.getElementById('yoyBtn').classList.remove('active');
+        removeExtraColumn();
+
+        const mode = currentQueryMode;
+
+        if (mode === 'single') {
+            const month = document.getElementById('monthSelect').value;
+            if (!month) { showMessage('请选择月份', 'error'); return; }
+        } else {
+            const start = document.getElementById('startMonth').value;
+            const end = document.getElementById('endMonth').value;
+            if (!start || !end) { showMessage('请选择开始和结束月份', 'error'); return; }
+            if (start > end) { showMessage('开始月份不能大于结束月份', 'error'); return; }
+        }
+
+        const queryBtn = document.getElementById('queryBtn');
+        const queryLoading = document.getElementById('queryLoading');
+        queryBtn.disabled = true;
+        queryLoading.style.display = 'inline';
+
+        let data = [];
+        try {
+            if (mode === 'single') {
+                const month = document.getElementById('monthSelect').value;
+                data = await querySingleMonth(month);
+                currentData = data;
+                renderBaseTable(data, 'single');
+                document.getElementById('momBtn').disabled = false;
+                document.getElementById('yoyBtn').disabled = false;
+            } else {
+                const start = document.getElementById('startMonth').value;
+                const end = document.getElementById('endMonth').value;
+                data = await queryRange(start, end);
+                currentData = data;
+                renderBaseTable(data, 'range');
+                document.getElementById('momBtn').disabled = true;
+                document.getElementById('yoyBtn').disabled = true;
+            }
+            const annualTh = document.getElementById('annualHeader');
+            if (mode === 'range') annualTh.style.display = 'none';
+            else annualTh.style.display = 'table-cell';
+        } catch (err) {
+            console.error(err);
+            showMessage('查询失败: ' + err.message, 'error');
+            document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" class="no-data">查询出错</td></tr>';
+        } finally {
+            queryBtn.disabled = false;
+            queryLoading.style.display = 'none';
+        }
+    }
+
+    async function exportCurrentData() {
+        if (!currentData.length) { showMessage('没有可导出的数据，请先查询', 'warning'); return; }
+        let exportRows = [];
+        if (currentQueryMode === 'single') {
+            let extraValues = [];
+            if (activeAnalytics === 'mom' || activeAnalytics === 'yoy') {
+                const allData = await getAllData();
+                const tonnageMap = new Map();
+                for (const rec of allData) {
+                    tonnageMap.set(`${rec.company_code}_${rec.period}`, rec.monthly_tonnage);
+                }
+                for (let item of currentData) {
+                    if (activeAnalytics === 'mom') {
+                        const [year, month] = item.month.split('-');
+                        if (month === '01') { extraValues.push('不涉及'); continue; }
+                        const prevMonth = `${year}-${(parseInt(month)-1).toString().padStart(2,'0')}`;
+                        const prevTonnage = tonnageMap.get(`${item.company_code_raw}_${prevMonth}`);
+                        if (prevTonnage === undefined || prevTonnage === null) extraValues.push('数据不全');
+                        else extraValues.push(item.throughput - prevTonnage);
+                    } else {
+                        const [year, month] = item.month.split('-');
+                        const lastYear = (parseInt(year)-1).toString();
+                        const lastYearMonth = `${lastYear}-${month}`;
+                        const lastYearTonnage = tonnageMap.get(`${item.company_code_raw}_${lastYearMonth}`);
+                        if (lastYearTonnage === undefined || lastYearTonnage === null) extraValues.push('数据不全');
+                        else extraValues.push(item.throughput - lastYearTonnage);
+                    }
+                }
+            }
+            for (let idx = 0; idx < currentData.length; idx++) {
+                const item = currentData[idx];
+                const row = {
+                    '序号': idx + 1,
+                    '码头名称': item.dock_name,
+                    '企业代码': item.company_code,
+                    '所属区县': item.district,
+                    '月份': item.periodLabel,
+                    '吞吐量(吨)': item.throughput,
+                };
+                if (activeAnalytics === 'mom') row['环比增量(吨)'] = extraValues[idx];
+                else if (activeAnalytics === 'yoy') row['同比增量(吨)'] = extraValues[idx];
+                row['年度累计(吨)'] = item.annual_total;
+                exportRows.push(row);
+            }
+        } else {
+            for (let idx = 0; idx < currentData.length; idx++) {
+                const item = currentData[idx];
+                exportRows.push({
+                    '序号': idx + 1,
+                    '码头名称': item.dock_name,
+                    '企业代码': item.company_code,
+                    '所属区县': item.district,
+                    '时间段': item.periodLabel,
+                    '累计吞吐量(吨)': item.throughput
+                });
+            }
+        }
+        const ws = XLSX.utils.json_to_sheet(exportRows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '查询结果');
+        XLSX.writeFile(wb, `港口数据_${new Date().toISOString().slice(0,19)}.xlsx`);
+        showMessage('导出成功', 'success');
+    }
+
+    async function exportAllData() {
+        const all = await getAllData();
+        if (all.length === 0) { showMessage('没有数据可导出', 'warning'); return; }
+        const backup = JSON.stringify(all, null, 2);
+        const blob = new Blob([backup], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `港口数据备份_${new Date().toISOString().slice(0,19)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showMessage('导出备份成功', 'success');
+    }
+
+    async function importBackup(file) {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if (!Array.isArray(imported)) throw new Error('文件格式错误');
+                await saveData(imported);
+                showMessage(`成功导入 ${imported.length} 条记录`, 'success');
+                await refreshMonthsUI();
+                document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" class="no-data">请选择查询条件后点击查询</td></tr>';
+                currentData = [];
+                activeAnalytics = null;
+            } catch (err) {
+                showMessage('导入失败: ' + err.message, 'error');
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    // ==================== Excel 上传解析 ====================
+    async function parseExcelToRecords(data, fileNameHint = '') {
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+        if (!rows || rows.length < 2) throw new Error(`文件 ${fileNameHint} 至少需要表头行+数据行`);
+        const records = [];
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (row.length < 5) throw new Error(`文件 ${fileNameHint} 第 ${i+1} 行数据列数不足5列`);
+            const district = row[0] ? String(row[0]).trim() : "";
+            const company_code = row[1] ? String(row[1]).trim() : "";
+            const dock_name = row[2] ? String(row[2]).trim() : "";
+            const periodRaw = row[3] ? row[3] : "";
+            const monthly_tonnageRaw = row[4] !== undefined ? row[4] : "";
+            if (!district || !company_code || !dock_name || !periodRaw) throw new Error(`文件 ${fileNameHint} 第 ${i+1} 行 必填字段为空`);
+            let period = parsePeriod(periodRaw);
+            let tonnage = safeParseNumber(monthly_tonnageRaw);
+            const id = `${company_code}_${period}`;
+            records.push({ id, district, company_code, dock_name, period, monthly_tonnage: tonnage });
+        }
+        return records;
+    }
+
+    function parsePeriod(periodStr) {
+        periodStr = String(periodStr).trim();
+        let match = periodStr.match(/(\d{4})[-\/年.]?(\d{1,2})/);
+        if (match) {
+            let year = match[1];
+            let month = match[2].padStart(2, '0');
+            return `${year}-${month}`;
+        }
+        if (/^\d{6}$/.test(periodStr)) {
+            return `${periodStr.slice(0,4)}-${periodStr.slice(4,6)}`;
+        }
+        throw new Error(`无法解析的时期: ${periodStr}`);
+    }
+
+    function safeParseNumber(value) {
+        if (value === undefined || value === null || value === "") return 0;
+        const num = parseFloat(value);
+        return isNaN(num) ? 0 : num;
+    }
+
+    // ==================== 刷新月份下拉框 ====================
+    async function refreshMonthsUI() {
+        const months = await getUploadedMonths();
+        const monthSelect = document.getElementById('monthSelect');
+        const startSelect = document.getElementById('startMonth');
+        const endSelect = document.getElementById('endMonth');
+        const container = document.getElementById('monthTags');
+        container.classList.remove('loading-tip');
+        if (months.length === 0) {
+            container.innerHTML = '<span class="month-tag" style="background:#eef2f5;">暂无数据</span>';
+            monthSelect.innerHTML = '<option value="">-- 无数据 --</option>';
+            startSelect.innerHTML = '<option value="">-- 无数据 --</option>';
+            endSelect.innerHTML = '<option value="">-- 无数据 --</option>';
+            return;
+        }
+        let tagsHtml = '';
+        months.forEach(m => { tagsHtml += `<div class="month-tag">${m.replace('-', '年')}月</div>`; });
+        container.innerHTML = tagsHtml;
+        const optionsHtml = months.map(m => `<option value="${m}">${m.replace('-', '年')}月</option>`).join('');
+        monthSelect.innerHTML = '<option value="">-- 请选择 --</option>' + optionsHtml;
+        startSelect.innerHTML = '<option value="">-- 请选择 --</option>' + optionsHtml;
+        endSelect.innerHTML = '<option value="">-- 请选择 --</option>' + optionsHtml;
+    }
+
+    // ==================== 事件绑定 ====================
+    let selectedFiles = [];
+    document.getElementById('excelFile').addEventListener('change', function(e) {
+        selectedFiles = Array.from(e.target.files);
+        document.getElementById('fileName').innerText = selectedFiles.length ? `已选 ${selectedFiles.length} 个文件` : '未选择文件';
+        document.getElementById('uploadBtn').disabled = selectedFiles.length === 0;
+    });
+
+    document.getElementById('uploadBtn').addEventListener('click', async function() {
+        if (selectedFiles.length === 0) { showMessage('请先选择文件', 'error'); return; }
+        const btn = this;
+        btn.disabled = true;
+        btn.innerText = '上传中...';
+        let totalRecords = 0;
+        let errors = [];
+        for (let file of selectedFiles) {
+            try {
+                const data = await file.arrayBuffer();
+                const records = await parseExcelToRecords(data, file.name);
+                await saveData(records);
+                totalRecords += records.length;
+            } catch (err) {
+                errors.push(`${file.name}: ${err.message}`);
+            }
+        }
+
+        try {
+            const cloudCount = await supabaseGetCount();
+            if (cloudCount >= 0) {
+                if (errors.length) showMessage(`成功 ${totalRecords} 条，云端共 ${cloudCount} 条。部分失败: ${errors.join('; ')}`, 'warning');
+                else showMessage(`✅ 成功上传 ${totalRecords} 条，云端共 ${cloudCount} 条记录`, 'success');
+            } else {
+                if (errors.length) showMessage(`成功 ${totalRecords} 条，部分失败: ${errors.join('; ')}`, 'warning');
+                else showMessage(`成功上传 ${totalRecords} 条记录`, 'success');
+            }
+        } catch (e) {
+            if (errors.length) showMessage(`成功 ${totalRecords} 条，部分失败: ${errors.join('; ')}`, 'warning');
+            else showMessage(`成功上传 ${totalRecords} 条记录`, 'success');
+        }
+
+        await refreshMonthsUI();
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" class="no-data">请选择查询条件后点击查询</td></tr>';
+        currentData = [];
+        activeAnalytics = null;
+        btn.disabled = false;
+        btn.innerText = '⬆️ 上传并存储';
+        selectedFiles = [];
+        document.getElementById('excelFile').value = '';
+        document.getElementById('fileName').innerText = '未选择文件';
+    });
+
+    document.getElementById('exportAllBtn').addEventListener('click', exportAllData);
+    document.getElementById('importBackupBtn').addEventListener('click', () => document.getElementById('importBackup').click());
+    document.getElementById('importBackup').addEventListener('change', (e) => {
+        if (e.target.files.length) importBackup(e.target.files[0]);
+        e.target.value = '';
+    });
+
+    // ==================== 查询模式切换 ====================
+    function setQueryMode(mode) {
+        currentQueryMode = mode;
+        const singleGroup = document.getElementById('singleGroup');
+        const rangeGroup = document.getElementById('rangeGroup');
+        const singleBtn = document.querySelector('.mode-btn[data-mode="single"]');
+        const rangeBtn = document.querySelector('.mode-btn[data-mode="range"]');
+        if (mode === 'single') {
+            singleGroup.style.display = 'flex';
+            rangeGroup.style.display = 'none';
+            singleBtn.classList.add('active');
+            rangeBtn.classList.remove('active');
+            document.getElementById('momBtn').disabled = false;
+            document.getElementById('yoyBtn').disabled = false;
+        } else {
+            singleGroup.style.display = 'none';
+            rangeGroup.style.display = 'flex';
+            singleBtn.classList.remove('active');
+            rangeBtn.classList.add('active');
+            document.getElementById('momBtn').disabled = true;
+            document.getElementById('yoyBtn').disabled = true;
+        }
+        removeExtraColumn();
+        activeAnalytics = null;
+        document.getElementById('momBtn').classList.remove('active');
+        document.getElementById('yoyBtn').classList.remove('active');
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" class="no-data">请选择查询条件后点击查询</td></tr>';
+        currentData = [];
+        const annualTh = document.getElementById('annualHeader');
+        if (mode === 'range') annualTh.style.display = 'none';
+        else annualTh.style.display = 'table-cell';
+    }
+
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const mode = btn.getAttribute('data-mode');
+            setQueryMode(mode);
+        });
+    });
+    document.getElementById('queryBtn').addEventListener('click', handleQuery);
+    document.getElementById('momBtn').addEventListener('click', handleMom);
+    document.getElementById('yoyBtn').addEventListener('click', handleYoy);
+    document.getElementById('exportBtn').addEventListener('click', exportCurrentData);
+
+    // ==================== 初始化 ====================
+    (async function init() {
+        try {
+            await supabaseTestConnection();
+            await refreshMonthsUI();
+            setQueryMode('single');
+            const cnt = await supabaseGetCount();
+            const countInfo = cnt >= 0 ? `，共 ${cnt} 条记录` : '';
+            showMessage(`✅ Supabase 云端已连接${countInfo}`, 'success');
+        } catch(e) {
+            setQueryMode('single');
+            showMessage('⚠️ Supabase 连接失败，请检查网络或联系管理员', 'error');
+        }
+    })();
+</script>
+</body>
+</html>
