@@ -356,14 +356,19 @@ async function saveCargoDataToCloud(records) {
     if (!records || records.length === 0) return 0;
     const rowMap = new Map();
     records.forEach(r => {
-        const key = `${r.period}|${r.region}|${r.category}|${r.direction}|${r.tradeType}`;
+        const period = String(r.period || '').trim();
+        const region = String(r.region || '').trim();
+        const category = String(r.category || '').trim();
+        const direction = String(r.direction || '').trim();
+        const tradeType = String(r.tradeType || '').trim();
+        const key = `${period}|${region}|${category}|${direction}|${tradeType}`;
         rowMap.set(key, {
-            period: r.period,
-            region: r.region,
-            category: r.category,
-            unit: r.unit || '吨',
-            direction: r.direction,
-            trade_type: r.tradeType,
+            period,
+            region,
+            category,
+            unit: String(r.unit || '吨').trim(),
+            direction,
+            trade_type: tradeType,
             value: r.value
         });
     });
@@ -412,11 +417,14 @@ async function saveContainerDataToCloud(records) {
     if (!records || records.length === 0) return 0;
     const rowMap = new Map();
     records.forEach(r => {
-        const key = `${r.period}|${r.region}|${r.indicator || '集装箱吞吐量(箱数)'}`;
+        const period = String(r.period || '').trim();
+        const region = String(r.region || '').trim();
+        const indicator = String(r.indicator || '集装箱吞吐量(箱数)').trim();
+        const key = `${period}|${region}|${indicator}`;
         rowMap.set(key, {
-            period: r.period,
-            region: r.region,
-            indicator: r.indicator || '集装箱吞吐量(箱数)',
+            period,
+            region,
+            indicator,
             value: r.value
         });
     });
@@ -572,11 +580,12 @@ function parseSheetRows(rows, sheetName, fileName) {
     if (catCol < 0) { for (let j = 0; j < Math.min(rows[headerRow2].length, 5); j++) { const c = String(rows[headerRow2][j] || '').trim(); if (!c || /甲|乙|序号|指标|名称/.test(c)) { catCol = j; break; } } }
     if (catCol < 0) catCol = 1;
 
-    const row1F = fillForward(rows[headerRow1].map(c => String(c || '').trim()));
-    const row2C = rows[headerRow2].map(c => String(c || '').trim());
+    const row1F = fillForward(rows[headerRow1].map(c => String(c || '').replace(/\s/g, '')));
+    const row2C = rows[headerRow2].map(c => String(c || '').replace(/\s/g, ''));
     const colMap = [];
-    for (let j = 0; j < rows[headerRow2].length; j++) { const dir = row1F[j] || ''; const tt = row2C[j] || ''; if (dir && tt && DIRECTIONS.includes(dir) && TRADE_TYPES.includes(tt)) colMap.push({ col: j, direction: dir, tradeType: tt }); }
-    if (colMap.length === 0) { for (let j = 0; j < rows[headerRow2].length; j++) { const dir = row1F[j] || ''; const tt = row2C[j] || ''; if (dir && tt) colMap.push({ col: j, direction: dir, tradeType: tt }); } }
+    const colMapKeys = new Set();
+    for (let j = 0; j < rows[headerRow2].length; j++) { const dir = row1F[j] || ''; const tt = row2C[j] || ''; if (dir && tt && DIRECTIONS.includes(dir) && TRADE_TYPES.includes(tt)) { const key = `${dir}|${tt}`; if (!colMapKeys.has(key)) { colMap.push({ col: j, direction: dir, tradeType: tt }); colMapKeys.add(key); } } }
+    if (colMap.length === 0) { for (let j = 0; j < rows[headerRow2].length; j++) { const dir = row1F[j] || ''; const tt = row2C[j] || ''; if (dir && tt) { const key = `${dir}|${tt}`; if (!colMapKeys.has(key)) { colMap.push({ col: j, direction: dir, tradeType: tt }); colMapKeys.add(key); } } } }
     if (colMap.length === 0) return records;
 
     let unitCol = -1;
