@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>湖州港分类货物吞吐量统计分析</title>
+    <title>港口分类货物吞吐量统计分析</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #f5f8fb; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; min-height: 100vh; padding: 14px; }
@@ -70,7 +70,7 @@
         td.label { text-align: left; padding-left: 14px; font-weight: 500; }
         .total-row { background: #e8f4f8; font-weight: 600; }
         .no-data { text-align: center; padding: 30px; color: #8ba0b5; font-size: 0.85rem; }
-        .footer { text-align: center; font-size: 0.7rem; color: #7f8fa4; margin-top: 18px; padding-top: 12px; border-top: 1px solid #e2edf7; }
+        .footer { text-align: center; font-size: 0.82rem; color: #7fb3c8; margin-top: 18px; padding-top: 12px; border-top: 1px solid #e2edf7; }
         .stats-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
         .stat-item { background: #f8fafd; border-radius: 8px; padding: 8px 14px; border: 1px solid #e6edf4; flex: 1; min-width: 100px; }
         .stat-item .stat-val { font-size: 1.1rem; font-weight: 700; color: #1a3a4a; }
@@ -117,7 +117,7 @@
 <div class="app">
     <div class="header">
         <div>
-            <h1>湖州港分类货物吞吐量统计分析</h1>
+            <h1>港口分类货物吞吐量统计分析</h1>
             <div class="sub">上传月度统计表 · 自定义表格模板 · 灵活生成数据表</div>
         </div>
         <div class="header-nav"><a href="matou.html">📊 按码头统计分析</a></div>
@@ -250,10 +250,11 @@
             <div class="table-wrapper" style="margin-top:12px;"><table id="resultTable"><thead id="resultHead"></thead><tbody id="resultBody"></tbody></table></div>
         </div>
 
-        <div class="footer">湖州港分类货物吞吐量统计分析系统 · 数据通过 Supabase 云端实时同步</div>
+        <div class="footer">湖州市港航管理中心港口科 2026年4月制作</div>
     </div>
 </div>
-<div style="text-align:center;padding:16px 0 8px;color:#7f8fa8;font-size:0.75rem;">制作:湖州市港航管理中心港口科 2026年4月</div>
+
+
 <script>
 const SUPABASE_URL = 'https://yzqqkslbixqqgzjzekku.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6cXFrc2xiaXhxcWd6anpla2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMTYzNjcsImV4cCI6MjA5MTc5MjM2N30.8sXLtcreqjchJeI3F3oxsluKEBH8NZ3lgtWcKK6aOnY';
