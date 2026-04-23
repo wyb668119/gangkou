@@ -354,15 +354,20 @@ async function loadContainerDataFromCloud() {
 
 async function saveCargoDataToCloud(records) {
     if (!records || records.length === 0) return 0;
-    const rows = records.map(r => ({
-        period: r.period,
-        region: r.region,
-        category: r.category,
-        unit: r.unit || '吨',
-        direction: r.direction,
-        trade_type: r.tradeType,
-        value: r.value
-    }));
+    const rowMap = new Map();
+    records.forEach(r => {
+        const key = `${r.period}|${r.region}|${r.category}|${r.direction}|${r.tradeType}`;
+        rowMap.set(key, {
+            period: r.period,
+            region: r.region,
+            category: r.category,
+            unit: r.unit || '吨',
+            direction: r.direction,
+            trade_type: r.tradeType,
+            value: r.value
+        });
+    });
+    const rows = Array.from(rowMap.values());
     const batchSize = 50;
     let savedCount = 0;
     for (let i = 0; i < rows.length; i += batchSize) {
@@ -405,12 +410,17 @@ async function saveCargoDataToCloud(records) {
 
 async function saveContainerDataToCloud(records) {
     if (!records || records.length === 0) return 0;
-    const rows = records.map(r => ({
-        period: r.period,
-        region: r.region,
-        indicator: r.indicator || '集装箱吞吐量(箱数)',
-        value: r.value
-    }));
+    const rowMap = new Map();
+    records.forEach(r => {
+        const key = `${r.period}|${r.region}|${r.indicator || '集装箱吞吐量(箱数)'}`;
+        rowMap.set(key, {
+            period: r.period,
+            region: r.region,
+            indicator: r.indicator || '集装箱吞吐量(箱数)',
+            value: r.value
+        });
+    });
+    const rows = Array.from(rowMap.values());
     const batchSize = 50;
     let savedCount = 0;
     for (let i = 0; i < rows.length; i += batchSize) {
