@@ -562,7 +562,8 @@ function parseSheetRows(rows, sheetName, fileName) {
     let region = detectRegion(sheetName) || detectRegion(fileName) || null;
     let period = null;
     for (let i = 0; i < Math.min(rows.length, 15); i++) { const rowStr = rows[i].map(c => String(c || '')).join(' '); if (!region) region = detectRegion(rowStr); if (!period) period = detectPeriod(rowStr); }
-    if (!region) region = '全市'; if (!period) period = '未知月份';
+    if (!region) region = '全市';
+    if (!period) { console.warn('无法识别月份，跳过此表:', sheetName); return records; }
 
     let headerRow1 = -1, headerRow2 = -1, catCol = -1;
     for (let i = 0; i < Math.min(rows.length, 15); i++) {
@@ -671,14 +672,22 @@ function parseContainerSheet(rows, sheetName, fileName) {
 async function parseExcelFile(file) {
     const data = await file.arrayBuffer(); const wb = XLSX.read(data, { type: 'array' });
     const allRec = []; const containerRec = []; const fn = file.name.replace(/\.\w+$/, ''); const dbg = [];
+    const skippedSheets = [];
     for (const sn of wb.SheetNames) {
         const sheet = wb.Sheets[sn]; 
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
         const raw = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: true });
         dbg.push({ name: sn, totalRows: rows.length, rawRows: rows.slice(0, 25) });
         console.log('Sheet:', sn, 'rows:', rows.length, 'first 3 rows:', rows.slice(0, 3));
+        const beforeCount = allRec.length;
         let rec = parseSheetRows(rows, sn, fn);
         if (rec.length === 0) { rec = parseSheetRows(raw, sn, fn); }
+        if (rec.length === 0 && rows.length >= 3) {
+            const headerText = rows.slice(0, 10).flat().join(' ');
+            if (!detectPeriod(headerText)) {
+                skippedSheets.push(sn);
+            }
+        }
         for (const r of rec) r._source = `${file.name} / ${sn}`;
         allRec.push(...rec);
         let cRec = parseContainerSheet(rows, sn, fn);
@@ -702,7 +711,7 @@ async function parseExcelFile(file) {
     const dedupedRec = Array.from(dedupMap.values());
     const dedupedContainerRec = Array.from(dedupContainerMap.values());
     lastDebugInfo = { fileName: file.name, sheets: dbg, parsedCount: allRec.length, containerCount: containerRec.length, dedupedCount: dedupedRec.length, dedupedContainerCount: dedupedContainerRec.length };
-    return { cargoRecords: dedupedRec, containerRecords: dedupedContainerRec };
+    return { cargoRecords: dedupedRec, containerRecords: dedupedContainerRec, skippedSheets };
 }
 
 function showDebugInfo() {
@@ -1686,10 +1695,10 @@ document.getElementById('uploadBtn').addEventListener('click', async function() 
     if (!selectedFiles.length) return;
     const btn = this; btn.disabled = true; btn.textContent = '上传中...';
     let allRec = [], containerRec = [], errors = [];
-    for (const file of selectedFiles) { try { const result = await parseExcelFile(file); if (result.cargoRecords.length === 0 && result.containerRecords.length === 0) errors.push(`${file.name}: 无数据`); else { allRec.push(...result.cargoRecords); containerRec.push(...result.containerRecords); } } catch (err) { errors.push(`${file.name}: ${err.message}`); } }
+    for (const file of selectedFiles) { try { const result = await parseExcelFile(file); if (result.cargoRecords.length === 0 && result.containerRecords.length === 0) { let errMsg = '无数据'; if (result.skippedSheets && result.skippedSheets.length > 0) { errMsg = `无法识别月份（表格: ${result.skippedSheets.join(', ')}），请在表标题中注明月份如"2025年12月"`; } errors.push(`${file.name}: ${errMsg}`); } else { allRec.push(...result.cargoRecords); containerRec.push(...result.containerRecords); if (result.skippedSheets && result.skippedSheets.length > 0) { errors.push(`${file.name}: 部分表格跳过（无法识别月份: ${result.skippedSheets.join(', ')}）`); } } } catch (err) { errors.push(`${file.name}: ${err.message}`); } }
     if (allRec.length === 0 && containerRec.length === 0) {
         btn.disabled = false; btn.textContent = '上传并解析';
-        showMessage('未解析到有效数据' + (errors.length ? '。' + errors.join('; ') : ''), 'error');
+        showMessage('未解析到有效数据。' + errors.join('; '), 'error');
         document.getElementById('debugBtnArea').style.display = 'block';
         return;
     }
