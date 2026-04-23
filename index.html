@@ -689,8 +689,20 @@ async function parseExcelFile(file) {
         for (const r of cRec) r._source = `${file.name} / ${sn}`;
         containerRec.push(...cRec);
     }
-    lastDebugInfo = { fileName: file.name, sheets: dbg, parsedCount: allRec.length, containerCount: containerRec.length };
-    return { cargoRecords: allRec, containerRecords: containerRec };
+    const dedupMap = new Map();
+    allRec.forEach(r => {
+        const key = `${r.period}|${r.region}|${r.category}|${r.direction}|${r.tradeType}`;
+        if (!dedupMap.has(key)) dedupMap.set(key, r);
+    });
+    const dedupContainerMap = new Map();
+    containerRec.forEach(r => {
+        const key = `${r.period}|${r.region}|${r.indicator}`;
+        if (!dedupContainerMap.has(key)) dedupContainerMap.set(key, r);
+    });
+    const dedupedRec = Array.from(dedupMap.values());
+    const dedupedContainerRec = Array.from(dedupContainerMap.values());
+    lastDebugInfo = { fileName: file.name, sheets: dbg, parsedCount: allRec.length, containerCount: containerRec.length, dedupedCount: dedupedRec.length, dedupedContainerCount: dedupedContainerRec.length };
+    return { cargoRecords: dedupedRec, containerRecords: dedupedContainerRec };
 }
 
 function showDebugInfo() {
