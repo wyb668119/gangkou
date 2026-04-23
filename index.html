@@ -203,7 +203,6 @@
             <div id="tplEditorArea"></div>
             <div id="tplResultArea" style="display:none;">
                 <div class="action-bar" style="margin-top:0;padding-top:0;border-top:none;">
-                    <button class="btn" onclick="renderTplTable()">生成表格</button>
                     <button class="btn btn-green" onclick="exportCurrentTable()">导出当前表格</button>
                 </div>
                 <div class="table-wrapper" style="margin-top:12px;"><table id="tplTable"><thead id="tplHead"></thead><tbody id="tplBody"></tbody></table></div>
@@ -240,7 +239,7 @@ const SUPABASE_URL = 'https://yzqqkslbixqqgzjzekku.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6cXFrc2xiaXhxcWd6anpla2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMTYzNjcsImV4cCI6MjA5MTc5MjM2N30.8sXLtcreqjchJeI3F3oxsluKEBH8NZ3lgtWcKK6aOnY';
 const CATEGORY_TABLE = 'gangkou_category_data';
 const CONTAINER_TABLE = 'gangkou_container_data';
-const TPL_KEY = 'gangkou_templates';
+const TEMPLATE_TABLE = 'gangkou_templates';
 const MAX_TEMPLATES = 10;
 const KNOWN_REGIONS = ['全市', '吴兴区', '南浔区', '长兴县', '德清县', '安吉县', '南太湖新区'];
 const DIRECTIONS = ['总计', '出港', '进港'];
@@ -522,8 +521,99 @@ async function refreshDataFromCloud() {
     containerData = await loadContainerDataFromCloud();
 }
 
-function loadTemplates() { try { templates = JSON.parse(localStorage.getItem(TPL_KEY) || '[]'); } catch(e) { templates = []; } }
-function saveTemplates() { try { localStorage.setItem(TPL_KEY, JSON.stringify(templates)); } catch(e) {} }
+async function loadTemplatesFromCloud() {
+    try {
+        const url = `${SUPABASE_URL}/rest/v1/${TEMPLATE_TABLE}?select=*&order=id`;
+        const resp = await fetch(url, { headers: sbHeaders() });
+        if (!resp.ok) {
+            const errBody = await resp.text();
+            console.error('加载模板失败:', errBody);
+            return [];
+        }
+        const rows = await resp.json();
+        return rows.map(r => ({
+            id: r.id,
+            name: r.name,
+            originalName: r.original_name,
+            periodMode: r.period_mode || 'single',
+            startMonth: r.start_month,
+            endMonth: r.end_month,
+            collapsed: r.collapsed || false,
+            filters: r.filters || { periods: [], regions: [], categories: [], directions: [], tradeTypes: [] },
+            showUnit: r.show_unit !== false
+        }));
+    } catch (e) {
+        console.error('加载模板异常:', e);
+        return [];
+    }
+}
+
+async function saveTemplatesToCloud() {
+    try {
+        const existingResp = await fetch(`${SUPABASE_URL}/rest/v1/${TEMPLATE_TABLE}?select=id`, { headers: sbHeaders() });
+        const existingIds = existingResp.ok ? (await existingResp.json()).map(r => r.id) : [];
+        
+        for (const tpl of templates) {
+            const row = {
+                name: tpl.name,
+                original_name: tpl.originalName || null,
+                period_mode: tpl.periodMode || 'single',
+                start_month: tpl.startMonth || null,
+                end_month: tpl.endMonth || null,
+                collapsed: tpl.collapsed || false,
+                filters: tpl.filters || { periods: [], regions: [], categories: [], directions: [], tradeTypes: [] },
+                show_unit: tpl.showUnit !== false
+            };
+            
+            if (tpl.id && existingIds.includes(tpl.id)) {
+                await fetch(`${SUPABASE_URL}/rest/v1/${TEMPLATE_TABLE}?id=eq.${tpl.id}`, {
+                    method: 'PATCH',
+                    headers: sbHeaders({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify(row)
+                });
+            } else {
+                const resp = await fetch(`${SUPABASE_URL}/rest/v1/${TEMPLATE_TABLE}`, {
+                    method: 'POST',
+                    headers: sbHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=representation' }),
+                    body: JSON.stringify(row)
+                });
+                if (resp.ok) {
+                    const result = await resp.json();
+                    if (result && result[0]) tpl.id = result[0].id;
+                }
+            }
+        }
+        
+        const currentIds = templates.filter(t => t.id).map(t => t.id);
+        for (const existingId of existingIds) {
+            if (!currentIds.includes(existingId)) {
+                await fetch(`${SUPABASE_URL}/rest/v1/${TEMPLATE_TABLE}?id=eq.${existingId}`, {
+                    method: 'DELETE',
+                    headers: sbHeaders()
+                });
+            }
+        }
+        return true;
+    } catch (e) {
+        console.error('保存模板异常:', e);
+        return false;
+    }
+}
+
+async function deleteTemplateFromCloud(id) {
+    try {
+        if (id) {
+            await fetch(`${SUPABASE_URL}/rest/v1/${TEMPLATE_TABLE}?id=eq.${id}`, {
+                method: 'DELETE',
+                headers: sbHeaders()
+            });
+        }
+        return true;
+    } catch (e) {
+        console.error('删除模板异常:', e);
+        return false;
+    }
+}
 
 let detailInfoVisible = false;
 function toggleDetailInfo() {
@@ -1342,12 +1432,12 @@ function renderTplTabs() {
     renderTplEditor();
 }
 
-function addTpl() {
+async function addTpl() {
     if (templates.length >= MAX_TEMPLATES) { showMessage('最多创建10个模板', 'warning'); return; }
     const tpl = createDefaultTemplate();
     templates.push(tpl);
     activeTplIdx = templates.length - 1;
-    saveTemplates();
+    await saveTemplatesToCloud();
     renderTplTabs();
 }
 
@@ -1355,19 +1445,20 @@ function switchTpl(idx) {
     if (activeTplIdx === idx) return;
     activeTplIdx = idx;
     renderTplTabs();
-    
-    // 如果模板已保存且名称已修改（collapsed 为 true），自动生成表格
     const tpl = templates[idx];
     if (tpl.collapsed) {
         renderTplTable();
+        document.getElementById('tplResultArea').style.display = 'block';
     }
 }
 
-function deleteTpl(idx) {
+async function deleteTpl(idx) {
     if (!confirm(`确定删除模板"${templates[idx].name}"？`)) return;
+    const tplId = templates[idx].id;
     templates.splice(idx, 1);
     if (activeTplIdx >= templates.length) activeTplIdx = templates.length - 1;
-    saveTemplates();
+    await deleteTemplateFromCloud(tplId);
+    await saveTemplatesToCloud();
     renderTplTabs();
     document.getElementById('tplResultArea').style.display = 'none';
 }
@@ -1456,14 +1547,14 @@ function expandTplEditor() {
     }
 }
 
-function updateTplName(name) { 
+async function updateTplName(name) { 
     if (activeTplIdx >= 0) { 
         const tpl = templates[activeTplIdx];
         if (tpl.originalName === null) {
             tpl.originalName = tpl.name;
         }
         tpl.name = name; 
-        saveTemplates(); 
+        await saveTemplatesToCloud(); 
         renderTplTabs(); 
     } 
 }
@@ -1511,7 +1602,7 @@ function syncTplFilter() {
     }
 }
 
-function saveCurrentTpl() {
+async function saveCurrentTpl() {
     if (activeTplIdx < 0) return;
     syncTplFilter();
     const tpl = templates[activeTplIdx];
@@ -1520,9 +1611,10 @@ function saveCurrentTpl() {
         tpl.collapsed = true;
     }
     
-    saveTemplates();
+    await saveTemplatesToCloud();
     renderTplEditor();
-    renderTplTable(); // 自动生成表格
+    renderTplTable();
+    document.getElementById('tplResultArea').style.display = 'block';
     showMessage(`模板"${tpl.name}"已保存`, 'success');
 }
 
@@ -1766,7 +1858,7 @@ document.getElementById('importBackup').addEventListener('change', function(e) {
             if (imp.version === 2) {
                 if (Array.isArray(imp.cargoRecords)) cargoRec = imp.cargoRecords;
                 if (Array.isArray(imp.containerRecords)) containerRec = imp.containerRecords;
-                if (Array.isArray(imp.templates)) { templates = imp.templates; saveTemplates(); }
+                if (Array.isArray(imp.templates)) { templates = imp.templates; await saveTemplatesToCloud(); }
             } else if (Array.isArray(imp)) {
                 cargoRec = imp;
             } else {
@@ -1791,14 +1883,16 @@ document.getElementById('modeSelect').addEventListener('change', function() { do
         await supabaseTestConnection();
         allData = await loadAllDataFromCloud();
         containerData = await loadContainerDataFromCloud();
-        loadTemplates();
+        templates = await loadTemplatesFromCloud();
         refreshOverview();
+        renderTplTabs();
         const cnt = await supabaseGetCategoryCount();
         const countInfo = cnt >= 0 ? `，共 ${cnt} 条记录` : '';
         showMessage(`✅ Supabase 云端已连接${countInfo}`, 'success');
     } catch(e) {
-        loadTemplates();
+        templates = [];
         refreshOverview();
+        renderTplTabs();
         showMessage('⚠️ Supabase 连接失败: ' + e.message, 'error');
     }
 })();
