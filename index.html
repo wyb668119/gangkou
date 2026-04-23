@@ -6,33 +6,27 @@
     <title>港口分类货物吞吐量统计分析</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: linear-gradient(135deg, #667eea22 0%, #764ba222 100%), #f0f4f8; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; min-height: 100vh; padding: 14px; }
+        body { background: #f5f8fb; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; min-height: 100vh; padding: 14px; }
         .app { max-width: 1500px; margin: 0 auto; }
-        .header { background: linear-gradient(135deg, #1a3a4a 0%, #0d2137 100%); padding: 18px 28px; border-radius: 20px 20px 0 0; border-bottom: 3px solid #2c7da0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; position: relative; overflow: hidden; }
-        .header::before { content: ''; position: absolute; top: -50%; right: -10%; width: 300px; height: 300px; background: radial-gradient(circle, rgba(44,125,160,0.3) 0%, transparent 70%); border-radius: 50%; }
-        .header h1 { color: #e8f4f8; font-size: 1.4rem; font-weight: 600; display: flex; align-items: center; gap: 10px; position: relative; z-index: 1; }
-        .header h1::before { content: ""; width: 36px; height: 36px; background: linear-gradient(135deg, #00d4ff, #2c7da0); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-        .header h1::after { content: "📊"; font-size: 1.3rem; position: absolute; left: 4px; top: 50%; transform: translateY(-50%); }
-        .header .sub { color: #7fb3c8; margin-top: 6px; font-size: 0.82rem; position: relative; z-index: 1; }
-        .header-nav { display: flex; align-items: center; position: relative; z-index: 1; }
-        .header-nav a { color: #fff; text-decoration: none; font-size: 1.05rem; font-weight: 600; padding: 10px 22px; background: linear-gradient(135deg, #2c7da0 0%, #1a5f7a 100%); border-radius: 30px; transition: all 0.3s; box-shadow: 0 4px 15px rgba(44,125,160,0.4); border: 1px solid rgba(255,255,255,0.2); position: relative; overflow: hidden; }
-        .header-nav a::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); transition: left 0.5s; }
-        .header-nav a:hover::before { left: 100%; }
+        .header { background: linear-gradient(135deg, #1a3a4a 0%, #0d2137 100%); padding: 18px 28px; border-radius: 20px 20px 0 0; border-bottom: 3px solid #2c7da0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .header h1 { color: #e8f4f8; font-size: 1.4rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .header h1::before { content: "📊"; font-size: 1.5rem; }
+        .header .sub { color: #7fb3c8; margin-top: 6px; font-size: 0.82rem; }
+        .header-nav { display: flex; align-items: center; }
+        .header-nav a { color: #fff; text-decoration: none; font-size: 1.05rem; font-weight: 600; padding: 10px 22px; background: linear-gradient(135deg, #2c7da0 0%, #1a5f7a 100%); border-radius: 30px; transition: all 0.3s; box-shadow: 0 4px 15px rgba(44,125,160,0.4); border: 1px solid rgba(255,255,255,0.2); }
         .header-nav a:hover { background: linear-gradient(135deg, #3a9bc0 0%, #2c7da0 100%); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(44,125,160,0.5); }
-        .main { background: linear-gradient(180deg, #f5f8fb 0%, #e8eef5 100%); padding: 18px 24px 24px; border-radius: 0 0 20px 20px; }
-        .card { background: linear-gradient(145deg, #ffffff 0%, #f8fafd 100%); border-radius: 16px; padding: 14px 20px; margin-bottom: 14px; border: 1px solid #e2edf7; box-shadow: 0 4px 20px rgba(0,0,0,0.06); position: relative; overflow: hidden; }
-        .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #2c7da0, #00d4ff, #2c7da0); opacity: 0.8; }
+        .main { background: #f5f8fb; padding: 18px 24px 24px; border-radius: 0 0 20px 20px; }
+        .card { background: white; border-radius: 14px; padding: 14px 20px; margin-bottom: 14px; border: 1px solid #e2edf7; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
         .card-title { font-size: 0.88rem; font-weight: 600; color: #1a3a4a; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; padding-bottom: 8px; border-bottom: 1px solid #eef2f7; }
         .upload-area { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-        .btn { background: linear-gradient(135deg, #2c7da0 0%, #1a5f7a 100%); border: none; color: white; padding: 8px 20px; border-radius: 40px; font-weight: 500; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; box-shadow: 0 2px 10px rgba(44,125,160,0.3); }
-        .btn:hover { background: linear-gradient(135deg, #3a9bc0 0%, #2c7da0 100%); transform: translateY(-2px); box-shadow: 0 4px 15px rgba(44,125,160,0.4); }
-        .btn:active { transform: translateY(0); }
+        .btn { background: #2c7da0; border: none; color: white; padding: 8px 20px; border-radius: 40px; font-weight: 500; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .btn:hover { background: #1f5f7a; transform: translateY(-1px); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .btn-green { background: linear-gradient(135deg, #27775a 0%, #1a5f45 100%); box-shadow: 0 2px 10px rgba(39,119,90,0.3); } .btn-green:hover { background: linear-gradient(135deg, #2d906a 0%, #27775a 100%); box-shadow: 0 4px 15px rgba(39,119,90,0.4); }
-        .btn-orange { background: linear-gradient(135deg, #c97b1a 0%, #a86515 100%); box-shadow: 0 2px 10px rgba(201,123,26,0.3); } .btn-orange:hover { background: linear-gradient(135deg, #e08a20 0%, #c97b1a 100%); box-shadow: 0 4px 15px rgba(201,123,26,0.4); }
-        .btn-red { background: linear-gradient(135deg, #c0392b 0%, #a03020 100%); box-shadow: 0 2px 10px rgba(192,57,43,0.3); } .btn-red:hover { background: linear-gradient(135deg, #d04030 0%, #c0392b 100%); box-shadow: 0 4px 15px rgba(192,57,43,0.4); }
+        .btn-green { background: #27775a; } .btn-green:hover { background: #1e5c45; }
+        .btn-orange { background: #c97b1a; } .btn-orange:hover { background: #a8651a; }
+        .btn-red { background: #c0392b; } .btn-red:hover { background: #a93226; }
         .btn-sm { padding: 5px 14px; font-size: 0.8rem; }
-        .file-info { font-size: 0.82rem; background: linear-gradient(135deg, #eef2f5 0%, #e8eef5 100%); padding: 5px 14px; border-radius: 30px; color: #4a627a; border: 1px solid #dfe8f0; }
+        .file-info { font-size: 0.82rem; background: #eef2f5; padding: 5px 14px; border-radius: 30px; color: #4a627a; }
         .msg-area { margin-top: 8px; font-size: 0.8rem; }
         .msg-success { color: #27775a; } .msg-error { color: #c0392b; } .msg-warning { color: #c97b1a; }
         .dot-anim { animation: dotFade 1.4s infinite both; }
@@ -50,56 +44,1885 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes pulse { 0%, 100% { opacity: 0.4; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.1); } }
         .tag-container { display: flex; flex-wrap: wrap; gap: 6px; }
-        .tag { background: linear-gradient(135deg, #eef2f9 0%, #e3f0fa 100%); padding: 4px 12px; border-radius: 30px; font-size: 0.75rem; font-weight: 500; color: #1e466e; border-left: 3px solid #2c7da0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .tag { background: #eef2f9; padding: 4px 12px; border-radius: 30px; font-size: 0.75rem; font-weight: 500; color: #1e466e; border-left: 3px solid #2c7da0; }
         .tag-remove { margin-left: 6px; cursor: pointer; color: #c0392b; font-weight: bold; }
         .tag-remove:hover { color: #a93226; }
         .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         @media (max-width: 900px) { .filter-grid { grid-template-columns: 1fr; } }
-        .filter-section { background: linear-gradient(145deg, #f8fafd 0%, #f0f5fa 100%); border-radius: 12px; padding: 10px 14px; border: 1px solid #e6edf4; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02); }
+        .filter-section { background: #f8fafd; border-radius: 10px; padding: 10px 14px; border: 1px solid #e6edf4; }
         .filter-label { font-size: 0.78rem; font-weight: 600; color: #1a3a4a; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
         .filter-label .select-all { font-weight: 400; color: #2c7da0; cursor: pointer; font-size: 0.75rem; }
         .filter-label .select-all:hover { text-decoration: underline; }
         .checkbox-grid { display: flex; flex-wrap: wrap; gap: 5px; }
-        .cb-item { display: flex; align-items: center; gap: 4px; font-size: 0.78rem; color: #3a5068; background: white; padding: 3px 10px; border-radius: 18px; border: 1px solid #dfe8f0; cursor: pointer; transition: all 0.15s; user-select: none; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
-        .cb-item:hover { border-color: #2c7da0; background: #f0f7fb; box-shadow: 0 2px 5px rgba(44,125,160,0.15); }
-        .cb-item.checked { background: linear-gradient(135deg, #e3f2fd 0%, #d0e8fa 100%); border-color: #2c7da0; color: #1a3a4a; font-weight: 500; box-shadow: 0 1px 3px rgba(44,125,160,0.2); }
+        .cb-item { display: flex; align-items: center; gap: 4px; font-size: 0.78rem; color: #3a5068; background: white; padding: 2px 10px; border-radius: 18px; border: 1px solid #dfe8f0; cursor: pointer; transition: all 0.15s; user-select: none; }
+        .cb-item:hover { border-color: #2c7da0; background: #f0f7fb; }
+        .cb-item.checked { background: #e3f2fd; border-color: #2c7da0; color: #1a3a4a; font-weight: 500; }
         .cb-item input { display: none; }
         .period-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .period-row select, .period-row input { padding: 6px 12px; border-radius: 20px; border: 1px solid #cbdbe0; font-size: 0.78rem; background: white; transition: all 0.2s; }
-        .period-row select:focus, .period-row input:focus { outline: none; border-color: #2c7da0; box-shadow: 0 0 0 3px rgba(44,125,160,0.1); }
+        .period-row select, .period-row input { padding: 5px 10px; border-radius: 20px; border: 1px solid #cbdbe0; font-size: 0.78rem; background: white; }
         .action-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #eef2f7; }
-        .table-wrapper { overflow-x: auto; border-radius: 12px; border: 1px solid #eef2f8; background: white; margin-top: 6px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+        .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #eef2f8; background: white; margin-top: 6px; }
         table { width: 100%; border-collapse: collapse; font-size: 0.78rem; border: 1px solid #b0c4d8; }
-        th, td { padding: 8px 6px; text-align: center; border: 1px solid #c8d6e0; white-space: nowrap; }
-        th { background: linear-gradient(135deg, #e8f0f8 0%, #dce8f5 100%); color: #1a3a4a; font-weight: 600; }
+        th, td { padding: 7px 6px; text-align: center; border: 1px solid #c8d6e0; white-space: nowrap; }
+        th { background: #e8f0f8; color: #1a3a4a; font-weight: 600; }
         td { color: #3a5068; }
         td.num { font-variant-numeric: tabular-nums; text-align: right; padding-right: 14px; }
         td.label { text-align: left; padding-left: 14px; font-weight: 500; }
-        tr:hover { background: #f5f8fc; }
-        .total-row { background: linear-gradient(135deg, #e8f4f8 0%, #dceef8 100%); font-weight: 600; }
+        .total-row { background: #e8f4f8; font-weight: 600; }
         .no-data { text-align: center; padding: 30px; color: #8ba0b5; font-size: 0.85rem; }
         .footer { text-align: center; font-size: 0.82rem; color: #7fb3c8; margin-top: 18px; padding-top: 12px; border-top: 1px solid #e2edf7; }
         .stats-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-        .stat-item { background: linear-gradient(145deg, #f8fafd 0%, #f0f5fa 100%); border-radius: 10px; padding: 10px 14px; border: 1px solid #e6edf4; flex: 1; min-width: 100px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); transition: all 0.2s; }
-        .stat-item:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        .stat-item .stat-val { font-size: 1.2rem; font-weight: 700; color: #1a3a4a; background: linear-gradient(135deg, #1a3a4a, #2c7da0); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .stat-item .stat-label { font-size: 0.7rem; color: #7f8fa4; margin-top: 2px; }
-        .help-text { font-size: 0.72rem; color: #4a627a; background: linear-gradient(135deg, #eef2fa 0%, #e8eef8 100%); padding: 8px 14px; border-radius: 16px; margin-top: 8px; line-height: 1.5; border: 1px solid #dde8f2; }
+        .stat-item { background: #f8fafd; border-radius: 8px; padding: 8px 14px; border: 1px solid #e6edf4; flex: 1; min-width: 100px; }
+        .stat-item .stat-val { font-size: 1.1rem; font-weight: 700; color: #1a3a4a; }
+        .stat-item .stat-label { font-size: 0.7rem; color: #7f8fa4; margin-top: 1px; }
+        .help-text { font-size: 0.72rem; color: #4a627a; background: #eef2fa; padding: 6px 12px; border-radius: 16px; margin-top: 8px; line-height: 1.5; }
+
+
         .tpl-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; align-items: center; }
-        .tpl-tab { padding: 6px 14px; border-radius: 30px; font-size: 0.78rem; border: 1.5px solid #dfe8f0; cursor: pointer; transition: all 0.15s; background: white; color: #4a627a; font-weight: 500; display: flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
-        .tpl-tab:hover { border-color: #2c7da0; background: #f0f7fb; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(44,125,160,0.15); }
-        .tpl-tab.active { background: linear-gradient(135deg, #2c7da0 0%, #1a5f7a 100%); color: white; border-color: #2c7da0; box-shadow: 0 2px 10px rgba(44,125,160,0.3); }
+        .tpl-tab { padding: 6px 14px; border-radius: 30px; font-size: 0.78rem; border: 1.5px solid #dfe8f0; cursor: pointer; transition: all 0.15s; background: white; color: #4a627a; font-weight: 500; display: flex; align-items: center; gap: 5px; }
+        .tpl-tab:hover { border-color: #2c7da0; background: #f0f7fb; }
+        .tpl-tab.active { background: #2c7da0; color: white; border-color: #2c7da0; }
         .tpl-tab .tpl-tab-close { font-size: 0.7rem; opacity: 0.6; margin-left: 4px; }
-        .tpl-tab .tpl-tab-close:hover { opacity: 1; }
-        .tpl-add-btn { width: 30px; height: 30px; border-radius: 50%; border: 2px dashed #2c7da0; background: transparent; color: #2c7da0; font-size: 1.2rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
-        .tpl-add-btn:hover { background: #2c7da0; color: white; border-style: solid; }
-        .tpl-editor { background: linear-gradient(145deg, #f8fafd 0%, #f0f5fa 100%); border-radius: 12px; padding: 14px; border: 1px solid #e6edf4; }
-        .chart-box { background: white; border-radius: 12px; padding: 14px; border: 1px solid #e6edf4; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
-        .chart-box h3 { font-size: 0.85rem; color: #1a3a4a; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #eef2f7; }
-        .overview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .tpl-tab .tpl-tab-close:hover { opacity: 1; color: #c0392b; }
+        .tpl-add-btn { width: 32px; height: 32px; border-radius: 50%; border: 1.5px dashed #b0c4d8; background: transparent; color: #7f8fa4; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+        .tpl-add-btn:hover { border-color: #2c7da0; color: #2c7da0; background: #f0f7fb; }
+
+        .tpl-editor { background: #f8fafd; border-radius: 12px; padding: 14px 16px; border: 1px solid #e6edf4; margin-bottom: 12px; }
+        .tpl-editor-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .tpl-editor-row label { font-size: 0.78rem; font-weight: 600; color: #1a3a4a; min-width: 60px; }
+        .tpl-editor-row select, .tpl-editor-row input[type="text"] { padding: 5px 10px; border-radius: 20px; border: 1px solid #cbdbe0; font-size: 0.78rem; background: white; }
+        .tpl-editor-row input[type="text"] { width: 180px; }
+        .overview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .chart-box { background: linear-gradient(145deg, #ffffff 0%, #f8fafd 100%); border-radius: 14px; padding: 16px 18px; border: 1px solid #e6edf4; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.04); transition: box-shadow 0.3s ease; }
+        .chart-box:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+        .chart-box h3 { font-size: 0.88rem; color: #1a3a4a; margin-bottom: 4px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .chart-box h3::before { content: ""; width: 4px; height: 16px; background: linear-gradient(180deg, #2c7da0 0%, #27775a 100%); border-radius: 2px; }
+        .chart-box .chart-sub { font-size: 0.74rem; color: #7f8fa4; margin-bottom: 12px; padding-left: 10px; border-left: 2px solid #e6edf4; }
+        .chart-box canvas { max-height: 280px; }
+        .chart-center-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
+        .chart-center-label .center-val { font-size: 1.1rem; font-weight: 700; color: #1a3a4a; }
+        .chart-center-label .center-unit { font-size: 0.68rem; color: #7f8fa4; }
         @media (max-width: 768px) { .overview-grid { grid-template-columns: 1fr; } }
-        @media (max-width: 768px) { .header { padding: 14px 18px; } .header h1 { font-size: 1.1rem; } .main { padding: 14px 16px; } }
     </style>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
+<body>
+<div class="page-loading" id="pageLoading">
+    <div class="page-loading-ring">
+        <div class="page-loading-glow"></div>
+    </div>
+    <div class="page-loading-text">网页加载中<span class="page-loading-dots"><span>.</span><span>.</span><span>.</span></span></div>
+</div>
+<div class="app">
+    <div class="header">
+        <div>
+            <h1>港口分类货物吞吐量统计分析</h1>
+            <div class="sub">上传月度统计表 · 自定义表格模板 · 灵活生成数据表</div>
+        </div>
+        <div class="header-nav"><a href="matou.html">📊 按码头统计分析</a></div>
+    </div>
+    <div class="main">
+        <div class="card">
+            <div class="card-title">📂 数据上传</div>
+            <div class="upload-area">
+                <input type="file" id="excelFile" accept=".xlsx, .xls" multiple style="display:none;">
+                <button class="btn" onclick="document.getElementById('excelFile').click()">选择Excel文件</button>
+                <span id="fileName" class="file-info">未选择文件</span>
+                <button id="uploadBtn" class="btn btn-green" disabled>上传并解析</button>
+                <button id="clearAllBtn" class="btn btn-red btn-sm">清空数据</button>
+                <button id="exportBackupBtn" class="btn btn-orange btn-sm">导出备份</button>
+                <input type="file" id="importBackup" accept=".json" style="display:none;">
+                <button class="btn btn-sm" onclick="document.getElementById('importBackup').click()">导入备份</button>
+            </div>
+            <div class="help-text">💡 支持上传行业统计平台生成的港口分类货物吞吐量表。列有两层表头：第一层（总计/出港/进港），第二层（合计/外贸/内贸）。地区和月份自动识别。数据通过 Supabase 云端实时同步，所有用户共享同一数据库。</div>
+            <div id="uploadMsg" class="msg-area"></div>
+            <div id="debugBtnArea" style="display:none;margin-top:10px;">
+                <button class="btn btn-orange btn-sm" onclick="showDebugInfo()">🔍 查看Excel原始数据</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">� 已上传数据概览</div>
+            <div class="stats-bar">
+                <div class="stat-item"><div class="stat-val" id="statMonths">0</div><div class="stat-label">月份数</div></div>
+                <div class="stat-item"><div class="stat-val" id="statRegions">0</div><div class="stat-label">地区数</div></div>
+                <div class="stat-item"><div class="stat-val" id="statCategories">0</div><div class="stat-label">货物分类数</div></div>
+                <div class="stat-item"><div class="stat-val" id="statRecords">0</div><div class="stat-label">数据记录数</div></div>
+            </div>
+            <div id="cloudLoadingHint" style="text-align:center;padding:12px;color:#e53935;font-size:0.9rem;font-weight:600;display:none;">云端数据读取中,请稍等<span class="dot-anim">.</span><span class="dot-anim" style="animation-delay:0.2s;">.</span><span class="dot-anim" style="animation-delay:0.4s;">.</span></div>
+            <div style="text-align:center;margin:8px 0;">
+                <span id="detailToggleBtn" onclick="toggleDetailInfo()" style="cursor:pointer;color:#2c7da0;font-size:0.8rem;">展开详情 ▼</span>
+            </div>
+            <div id="detailInfoArea" style="display:none;">
+                <div style="margin-bottom:8px;"><div class="filter-label">已上传月份</div><div id="monthTags" class="tag-container"><span class="tag">暂无数据</span></div></div>
+                <div><div class="filter-label">涉及地区</div><div id="regionTags" class="tag-container"><span class="tag">暂无数据</span></div></div>
+                <div><div class="filter-label">集装箱数据月份 <span class="select-all" onclick="toggleAllIn('containerMonthCb')">全选/取消</span></div><div id="containerMonthCb" class="checkbox-grid"></div><button class="btn btn-red btn-sm" style="margin-top:8px;" onclick="deleteSelectedContainerMonths()">删除所选月份</button></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">� 吞吐量总览</div>
+            <div id="overviewEmpty" style="text-align:center;color:#8ba0b5;padding:20px;font-size:0.82rem;">暂无数据，请先上传统计表</div>
+            <div id="overviewContent" style="display:none;">
+                <div class="overview-grid">
+                    <div class="chart-box">
+                        <h3>全市分类货物吞吐量</h3>
+                        <div class="period-row" style="margin-bottom:8px;">
+                            <label style="font-size:0.75rem;">时间段：</label>
+                            <select id="categoryPeriodStart" style="width:100px;font-size:0.75rem;"></select>
+                            <span style="font-size:0.75rem;margin:0 4px;">至</span>
+                            <select id="categoryPeriodEnd" style="width:100px;font-size:0.75rem;"></select>
+                        </div>
+                        <div class="chart-sub" id="categoryChartSub"></div>
+                        <div id="categoryTotalDisplay" style="text-align:center;font-size:0.85rem;color:#1a3a4a;font-weight:600;margin-bottom:8px;"></div>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    <div class="chart-box">
+                        <h3>各区县累计吞吐量</h3>
+                        <div class="period-row" style="margin-bottom:8px;">
+                            <label style="font-size:0.75rem;">时间段：</label>
+                            <select id="regionPeriodStart" style="width:100px;font-size:0.75rem;"></select>
+                            <span style="font-size:0.75rem;margin:0 4px;">至</span>
+                            <select id="regionPeriodEnd" style="width:100px;font-size:0.75rem;"></select>
+                        </div>
+                        <div class="chart-sub" id="regionChartSub"></div>
+                        <canvas id="regionChart"></canvas>
+                    </div>
+                </div>
+                <div class="overview-grid" style="margin-top:20px;">
+                    <div class="chart-box">
+                        <h3>吞吐量同比分析</h3>
+                        <div class="period-row" style="margin-bottom:8px;">
+                            <label style="font-size:0.75rem;">时间段：</label>
+                            <select id="yoyPeriodStart" style="width:100px;font-size:0.75rem;"></select>
+                            <span style="font-size:0.75rem;margin:0 4px;">至</span>
+                            <select id="yoyPeriodEnd" style="width:100px;font-size:0.75rem;"></select>
+                        </div>
+                        <div class="chart-sub" id="yoyChartSub"></div>
+                        <canvas id="yoyChart"></canvas>
+                    </div>
+                    <div class="chart-box">
+                        <h3>各区县集装箱量</h3>
+                        <div class="period-row" style="margin-bottom:8px;">
+                            <label style="font-size:0.75rem;">时间段：</label>
+                            <select id="containerPeriodStart" style="width:100px;font-size:0.75rem;"></select>
+                            <span style="font-size:0.75rem;margin:0 4px;">至</span>
+                            <select id="containerPeriodEnd" style="width:100px;font-size:0.75rem;"></select>
+                        </div>
+                        <div class="chart-sub" id="containerChartSub"></div>
+                        <div id="containerTotalDisplay" style="text-align:center;font-size:0.85rem;color:#1a3a4a;font-weight:600;margin-bottom:8px;"></div>
+                        <canvas id="containerChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">� 自定义表格模板</div>
+            <div class="tpl-tabs" id="tplTabs"></div>
+            <div id="tplEditorArea"></div>
+            <div id="tplResultArea" style="display:none;">
+                <div class="action-bar" style="margin-top:0;padding-top:0;border-top:none;">
+                    <button class="btn btn-green" onclick="exportCurrentTable()">导出当前表格</button>
+                </div>
+                <div class="table-wrapper" style="margin-top:12px;"><table id="tplTable"><thead id="tplHead"></thead><tbody id="tplBody"></tbody></table></div>
+            </div>
+        </div>
+
+        <div class="card" id="resultCard" style="display:none;">
+            <div class="card-title" id="resultTitle">📊 快速查询结果</div>
+            <div class="period-row">
+                <label style="font-size:0.82rem;font-weight:600;color:#1a3a4a;">查询模式：</label>
+                <select id="modeSelect"><option value="single">单月查询</option><option value="compare">多月对比</option></select>
+            </div>
+            <div class="period-row" id="singlePeriod"><label style="font-size:0.82rem;">月份：</label><select id="monthSelect"><option value="">-- 请选择 --</option></select></div>
+            <div class="period-row" id="comparePeriod" style="display:none;"><label style="font-size:0.82rem;">选择月份：</label><div id="compareMonthContainer" class="checkbox-grid"></div></div>
+            <div class="filter-grid" style="margin-top:14px;">
+                <div class="filter-section"><div class="filter-label">地区 <span class="select-all" onclick="toggleAllIn('qRegionCb')">全选/取消</span></div><div id="qRegionCb" class="checkbox-grid"></div></div>
+                <div class="filter-section"><div class="filter-label">货物分类 <span class="select-all" onclick="toggleAllIn('qCategoryCb')">全选/取消</span></div><div id="qCategoryCb" class="checkbox-grid"></div></div>
+            </div>
+            <div class="filter-grid" style="margin-top:14px;">
+                <div class="filter-section"><div class="filter-label">流向 <span class="select-all" onclick="toggleAllIn('qDirCb')">全选/取消</span></div><div id="qDirCb" class="checkbox-grid"></div></div>
+                <div class="filter-section"><div class="filter-label">贸易类型 <span class="select-all" onclick="toggleAllIn('qTradeCb')">全选/取消</span></div><div id="qTradeCb" class="checkbox-grid"></div></div>
+            </div>
+            <div class="action-bar"><button class="btn" onclick="quickQuery()">快速查询</button><button class="btn btn-green" onclick="exportCurrentTable()">导出</button></div>
+            <div class="table-wrapper" style="margin-top:12px;"><table id="resultTable"><thead id="resultHead"></thead><tbody id="resultBody"></tbody></table></div>
+        </div>
+
+        <div class="footer">湖州市港航管理中心港口科 2026年4月制作</div>
+    </div>
+</div>
+
+
+<script>
+const SUPABASE_URL = 'https://yzqqkslbixqqgzjzekku.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6cXFrc2xiaXhxcWd6anpla2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMTYzNjcsImV4cCI6MjA5MTc5MjM2N30.8sXLtcreqjchJeI3F3oxsluKEBH8NZ3lgtWcKK6aOnY';
+const CATEGORY_TABLE = 'gangkou_category_data';
+const CONTAINER_TABLE = 'gangkou_container_data';
+const TEMPLATE_TABLE = 'gangkou_templates';
+const MAX_TEMPLATES = 10;
+const KNOWN_REGIONS = ['全市', '吴兴区', '南浔区', '长兴县', '德清县', '安吉县', '南太湖新区'];
+const DIRECTIONS = ['总计', '出港', '进港'];
+const TRADE_TYPES = ['合计', '外贸', '内贸'];
+const CATEGORY_ORDER = [
+    '总计', '其中：水水中转', '煤炭及制品', '石油、天然气及制品', '其中：原油', '成品油',
+    '液化气', '天然气', '金属矿石', '其中：铁矿石', '钢铁', '矿建材料', '水泥', '其中：散水泥',
+    '木材', '非金属矿石', '化学肥料及农药', '其中：散化肥', '盐', '粮食', '其中：散粮',
+    '其中：玉米', '其中：大豆', '机械设备电器', '化工原料及制品', '有色金属', '轻工、医药产品',
+    '农、林、牧、渔业产品', '其他', '其中：集装箱重量', '滚装汽车吞吐量', '其中：商品汽车'
+];
+
+let allData = [];
+let containerData = [];
+let templates = [];
+let activeTplIdx = -1;
+let lastDebugInfo = null;
+
+function sbHeaders(extra = {}) {
+    return {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+        ...extra
+    };
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function supabaseTestConnection() {
+    const url = `${SUPABASE_URL}/rest/v1/${CATEGORY_TABLE}?select=id&limit=1`;
+    const resp = await fetch(url, { headers: sbHeaders() });
+    if (!resp.ok) {
+        const errBody = await resp.text();
+        throw new Error(`连接测试失败(${resp.status}): ${errBody}`);
+    }
+    await resp.json();
+    return true;
+}
+
+async function supabaseGetCategoryCount() {
+    try {
+        const url = `${SUPABASE_URL}/rest/v1/${CATEGORY_TABLE}?select=id&limit=1`;
+        const resp = await fetch(url, { headers: { ...sbHeaders(), 'Prefer': 'count=exact' } });
+        if (!resp.ok) return -1;
+        await resp.json();
+        const contentRange = resp.headers.get('Content-Range');
+        if (contentRange) {
+            const total = parseInt(contentRange.split('/')[1]);
+            return isNaN(total) ? -1 : total;
+        }
+        return -1;
+    } catch (e) {
+        return -1;
+    }
+}
+
+async function loadAllDataFromCloud() {
+    const allRecords = [];
+    let offset = 0;
+    const pageSize = 500;
+    let hasMore = true;
+    while (hasMore) {
+        const url = `${SUPABASE_URL}/rest/v1/${CATEGORY_TABLE}?select=*&order=id&offset=${offset}&limit=${pageSize}`;
+        const resp = await fetch(url, { headers: sbHeaders() });
+        if (!resp.ok) {
+            const errBody = await resp.text();
+            throw new Error(`查询分类数据失败(${resp.status}): ${errBody}`);
+        }
+        const rows = await resp.json();
+        allRecords.push(...rows);
+        if (rows.length < pageSize) hasMore = false;
+        else offset += pageSize;
+    }
+    return allRecords.map(r => ({
+        period: r.period,
+        region: r.region,
+        category: r.category,
+        unit: r.unit || '吨',
+        direction: r.direction,
+        tradeType: r.trade_type,
+        value: Number(r.value) || 0
+    }));
+}
+
+async function loadContainerDataFromCloud() {
+    const allRecords = [];
+    let offset = 0;
+    const pageSize = 500;
+    let hasMore = true;
+    while (hasMore) {
+        const url = `${SUPABASE_URL}/rest/v1/${CONTAINER_TABLE}?select=*&order=id&offset=${offset}&limit=${pageSize}`;
+        const resp = await fetch(url, { headers: sbHeaders() });
+        if (!resp.ok) {
+            const errBody = await resp.text();
+            throw new Error(`查询集装箱数据失败(${resp.status}): ${errBody}`);
+        }
+        const rows = await resp.json();
+        allRecords.push(...rows);
+        if (rows.length < pageSize) hasMore = false;
+        else offset += pageSize;
+    }
+    return allRecords.map(r => ({
+        period: r.period,
+        region: r.region,
+        indicator: r.indicator || '集装箱吞吐量(箱数)',
+        value: Number(r.value) || 0
+    }));
+}
+
+async function saveCargoDataToCloud(records) {
+    if (!records || records.length === 0) return 0;
+    const rowMap = new Map();
+    records.forEach(r => {
+        const period = String(r.period || '').trim();
+        const region = String(r.region || '').trim();
+        const category = String(r.category || '').trim();
+        const direction = String(r.direction || '').trim();
+        const tradeType = String(r.tradeType || '').trim();
+        const key = `${period}|${region}|${category}|${direction}|${tradeType}`;
+        rowMap.set(key, {
+            period,
+            region,
+            category,
+            unit: String(r.unit || '吨').trim(),
+            direction,
+            trade_type: tradeType,
+            value: r.value
+        });
+    });
+    const rows = Array.from(rowMap.values());
+    const batchSize = 50;
+    let savedCount = 0;
+    for (let i = 0; i < rows.length; i += batchSize) {
+        const batch = rows.slice(i, i + batchSize);
+        const url = `${SUPABASE_URL}/rest/v1/${CATEGORY_TABLE}?on_conflict=period,region,category,direction,trade_type`;
+        let retries = 3;
+        let lastError = null;
+        while (retries > 0) {
+            try {
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: sbHeaders({ 'Prefer': 'return=representation,resolution=merge-duplicates' }),
+                    body: JSON.stringify(batch)
+                });
+                if (!resp.ok) {
+                    const errBody = await resp.text();
+                    if ((resp.status === 429 || resp.status >= 500) && retries > 1) {
+                        retries--;
+                        await delay(1500);
+                        continue;
+                    }
+                    throw new Error(`写入分类数据失败(${resp.status}): ${errBody}`);
+                }
+                const result = await resp.json();
+                savedCount += Array.isArray(result) ? result.length : batch.length;
+                break;
+            } catch (err) {
+                lastError = err;
+                if (retries <= 1) throw lastError;
+                retries--;
+                await delay(1500);
+            }
+        }
+        if (i + batchSize < rows.length) {
+            await delay(300);
+        }
+    }
+    return savedCount;
+}
+
+async function saveContainerDataToCloud(records) {
+    if (!records || records.length === 0) return 0;
+    const rowMap = new Map();
+    records.forEach(r => {
+        const period = String(r.period || '').trim();
+        const region = String(r.region || '').trim();
+        const indicator = String(r.indicator || '集装箱吞吐量(箱数)').trim();
+        const key = `${period}|${region}|${indicator}`;
+        rowMap.set(key, {
+            period,
+            region,
+            indicator,
+            value: r.value
+        });
+    });
+    const rows = Array.from(rowMap.values());
+    const batchSize = 50;
+    let savedCount = 0;
+    for (let i = 0; i < rows.length; i += batchSize) {
+        const batch = rows.slice(i, i + batchSize);
+        const url = `${SUPABASE_URL}/rest/v1/${CONTAINER_TABLE}?on_conflict=period,region,indicator`;
+        let retries = 3;
+        let lastError = null;
+        while (retries > 0) {
+            try {
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: sbHeaders({ 'Prefer': 'return=representation,resolution=merge-duplicates' }),
+                    body: JSON.stringify(batch)
+                });
+                if (!resp.ok) {
+                    const errBody = await resp.text();
+                    if ((resp.status === 429 || resp.status >= 500) && retries > 1) {
+                        retries--;
+                        await delay(1500);
+                        continue;
+                    }
+                    throw new Error(`写入集装箱数据失败(${resp.status}): ${errBody}`);
+                }
+                const result = await resp.json();
+                savedCount += Array.isArray(result) ? result.length : batch.length;
+                break;
+            } catch (err) {
+                lastError = err;
+                if (retries <= 1) throw lastError;
+                retries--;
+                await delay(1500);
+            }
+        }
+        if (i + batchSize < rows.length) {
+            await delay(300);
+        }
+    }
+    return savedCount;
+}
+
+async function deleteMonthFromCloud(month) {
+    const url = `${SUPABASE_URL}/rest/v1/${CATEGORY_TABLE}?period=eq.${encodeURIComponent(month)}`;
+    const resp = await fetch(url, {
+        method: 'DELETE',
+        headers: sbHeaders({ 'Prefer': 'return=minimal' })
+    });
+    if (!resp.ok) {
+        const errBody = await resp.text();
+        throw new Error(`删除分类数据失败(${resp.status}): ${errBody}`);
+    }
+    const cUrl = `${SUPABASE_URL}/rest/v1/${CONTAINER_TABLE}?period=eq.${encodeURIComponent(month)}`;
+    await fetch(cUrl, {
+        method: 'DELETE',
+        headers: sbHeaders({ 'Prefer': 'return=minimal' })
+    });
+}
+
+async function deleteContainerMonthsFromCloud(months) {
+    for (const month of months) {
+        const url = `${SUPABASE_URL}/rest/v1/${CONTAINER_TABLE}?period=eq.${encodeURIComponent(month)}`;
+        await fetch(url, {
+            method: 'DELETE',
+            headers: sbHeaders({ 'Prefer': 'return=minimal' })
+        });
+    }
+}
+
+async function clearAllCloudData() {
+    const url1 = `${SUPABASE_URL}/rest/v1/${CATEGORY_TABLE}?id=not.is.null`;
+    const resp1 = await fetch(url1, {
+        method: 'DELETE',
+        headers: sbHeaders({ 'Prefer': 'return=minimal' })
+    });
+    if (!resp1.ok) {
+        const errBody = await resp1.text();
+        throw new Error(`清空分类数据失败(${resp1.status}): ${errBody}`);
+    }
+    const url2 = `${SUPABASE_URL}/rest/v1/${CONTAINER_TABLE}?id=not.is.null`;
+    const resp2 = await fetch(url2, {
+        method: 'DELETE',
+        headers: sbHeaders({ 'Prefer': 'return=minimal' })
+    });
+    if (!resp2.ok) {
+        const errBody = await resp2.text();
+        throw new Error(`清空集装箱数据失败(${resp2.status}): ${errBody}`);
+    }
+}
+
+async function refreshDataFromCloud() {
+    allData = await loadAllDataFromCloud();
+    containerData = await loadContainerDataFromCloud();
+}
+
+async function loadTemplatesFromCloud() {
+    try {
+        const url = `${SUPABASE_URL}/rest/v1/${TEMPLATE_TABLE}?select=*&order=id`;
+        const resp = await fetch(url, { headers: sbHeaders() });
+        if (!resp.ok) {
+            const errBody = await resp.text();
+            console.error('加载模板失败:', errBody);
+            return [];
+        }
+        const rows = await resp.json();
+        return rows.map(r => ({
+            id: r.id,
+            name: r.name,
+            originalName: r.original_name,
+            periodMode: r.period_mode || 'single',
+            startMonth: r.start_month,
+            endMonth: r.end_month,
+            collapsed: r.collapsed || false,
+            filters: r.filters || { periods: [], regions: [], categories: [], directions: [], tradeTypes: [] },
+            showUnit: r.show_unit !== false
+        }));
+    } catch (e) {
+        console.error('加载模板异常:', e);
+        return [];
+    }
+}
+
+async function saveTemplatesToCloud() {
+    try {
+        const existingResp = await fetch(`${SUPABASE_URL}/rest/v1/${TEMPLATE_TABLE}?select=id`, { headers: sbHeaders() });
+        const existingIds = existingResp.ok ? (await existingResp.json()).map(r => r.id) : [];
+        
+        for (const tpl of templates) {
+            const row = {
+                name: tpl.name,
+                original_name: tpl.originalName || null,
+                period_mode: tpl.periodMode || 'single',
+                start_month: tpl.startMonth || null,
+                end_month: tpl.endMonth || null,
+                collapsed: tpl.collapsed || false,
+                filters: tpl.filters || { periods: [], regions: [], categories: [], directions: [], tradeTypes: [] },
+                show_unit: tpl.showUnit !== false
+            };
+            
+            if (tpl.id && existingIds.includes(tpl.id)) {
+                await fetch(`${SUPABASE_URL}/rest/v1/${TEMPLATE_TABLE}?id=eq.${tpl.id}`, {
+                    method: 'PATCH',
+                    headers: sbHeaders({ 'Content-Type': 'application/json' }),
+                    body: JSON.stringify(row)
+                });
+            } else {
+                const resp = await fetch(`${SUPABASE_URL}/rest/v1/${TEMPLATE_TABLE}`, {
+                    method: 'POST',
+                    headers: sbHeaders({ 'Content-Type': 'application/json', 'Prefer': 'return=representation' }),
+                    body: JSON.stringify(row)
+                });
+                if (resp.ok) {
+                    const result = await resp.json();
+                    if (result && result[0]) tpl.id = result[0].id;
+                }
+            }
+        }
+        
+        const currentIds = templates.filter(t => t.id).map(t => t.id);
+        for (const existingId of existingIds) {
+            if (!currentIds.includes(existingId)) {
+                await fetch(`${SUPABASE_URL}/rest/v1/${TEMPLATE_TABLE}?id=eq.${existingId}`, {
+                    method: 'DELETE',
+                    headers: sbHeaders()
+                });
+            }
+        }
+        return true;
+    } catch (e) {
+        console.error('保存模板异常:', e);
+        return false;
+    }
+}
+
+async function deleteTemplateFromCloud(id) {
+    try {
+        if (id) {
+            await fetch(`${SUPABASE_URL}/rest/v1/${TEMPLATE_TABLE}?id=eq.${id}`, {
+                method: 'DELETE',
+                headers: sbHeaders()
+            });
+        }
+        return true;
+    } catch (e) {
+        console.error('删除模板异常:', e);
+        return false;
+    }
+}
+
+let detailInfoVisible = false;
+function toggleDetailInfo() {
+    detailInfoVisible = !detailInfoVisible;
+    const area = document.getElementById('detailInfoArea');
+    const btn = document.getElementById('detailToggleBtn');
+    if (detailInfoVisible) {
+        area.style.display = 'block';
+        btn.textContent = '收起详情 ▲';
+    } else {
+        area.style.display = 'none';
+        btn.textContent = '展开详情 ▼';
+    }
+}
+
+function showMessage(msg, type) { const d = document.getElementById('uploadMsg'); d.className = 'msg-area msg-' + (type || 'success'); d.textContent = msg; setTimeout(() => { d.textContent = ''; }, 8000); }
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+function fmtNum(n) { if (n === null || n === undefined) return '-'; if (typeof n === 'string') return n; return Number.isInteger(n) ? n.toLocaleString('zh-CN') : n.toLocaleString('zh-CN', {maximumFractionDigits:2}); }
+function safeNum(v) { if (v === null || v === undefined || v === '' || v === '-') return null; if (typeof v === 'number') return isNaN(v) ? null : v; const s = String(v).replace(/[,，\s%％]/g, ''); const n = parseFloat(s); return isNaN(n) ? null : n; }
+
+function detectRegion(text) { if (!text) return null; text = String(text).trim(); if (/吴兴/.test(text)) return '吴兴区'; if (/南浔/.test(text)) return '南浔区'; if (/长兴/.test(text)) return '长兴县'; if (/德清/.test(text)) return '德清县'; if (/安吉/.test(text)) return '安吉县'; if (/南太湖|太湖新/.test(text)) return '南太湖新区'; if (/全市|湖州/.test(text)) return '全市'; return null; }
+function detectPeriod(text) { if (!text) return null; text = String(text).trim(); let m = text.match(/(\d{4})\s*[-\/年.．]\s*(\d{1,2})\s*月?/); if (m) return m[1] + '-' + m[2].padStart(2, '0'); m = text.match(/(\d{4})(\d{2})/); if (m && +m[2] >= 1 && +m[2] <= 12) return m[1] + '-' + m[2]; return null; }
+
+function normalizeCategory(name) {
+    if (!name) return '';
+    name = String(name).trim().replace(/\s+/g, '');
+    const aliases = { '石油天然气及制品':'石油、天然气及制品','石油及天然气及制品':'石油、天然气及制品','石油天然气':'石油、天然气及制品','化肥及农药':'化学肥料及农药','化学肥料及农药':'化学肥料及农药','化学肥料':'化学肥料及农药','机械电器设备':'机械设备电器','机械设备及电器':'机械设备电器','机械、设备、电器':'机械设备电器','轻工医药':'轻工、医药产品','轻工医药产品':'轻工、医药产品','轻工、医药产品':'轻工、医药产品','化工原料及制品':'化工原料及制品','化工原料':'化工原料及制品','其中:外贸':'其中：外贸','其中外贸':'其中：外贸','其中：商品汽车':'其中：商品汽车','商品汽车':'其中：商品汽车','煤炭':'煤炭及制品' };
+    return aliases[name] || name;
+}
+
+function fillForward(arr) { const result = [...arr]; let last = ''; for (let i = 0; i < result.length; i++) { const v = String(result[i] || '').trim(); if (v) last = v; result[i] = last; } return result; }
+
+function parseSheetRows(rows, sheetName, fileName) {
+    const records = [];
+    if (!rows || rows.length < 3) return records;
+    let region = detectRegion(sheetName) || detectRegion(fileName) || null;
+    let period = null;
+    for (let i = 0; i < Math.min(rows.length, 15); i++) { const rowStr = rows[i].map(c => String(c || '')).join(' '); if (!region) region = detectRegion(rowStr); if (!period) period = detectPeriod(rowStr); }
+    if (!region) region = '全市';
+    if (!period) { console.warn('无法识别月份，跳过此表:', sheetName); return records; }
+
+    let headerRow1 = -1, headerRow2 = -1, catCol = -1;
+    for (let i = 0; i < Math.min(rows.length, 15); i++) {
+        const cells = rows[i].map(c => String(c || '').trim());
+        const hasDir = cells.some(c => c === '总计' || c === '出港' || c === '进港');
+        const hasTT = cells.some(c => c === '合计' || c === '外贸' || c === '内贸');
+        if (hasDir && !hasTT) headerRow1 = i;
+        if (hasTT && headerRow1 >= 0 && headerRow2 < 0) { headerRow2 = i; break; }
+    }
+    if (headerRow1 < 0) { for (let i = 0; i < Math.min(rows.length, 15); i++) { const cells = rows[i].map(c => String(c || '').trim()); if (cells.some(c => c === '合计' || c === '外贸' || c === '内贸')) { headerRow2 = i; headerRow1 = i - 1; break; } } }
+    if (headerRow2 < 0 && headerRow1 >= 0) { const cells = rows[headerRow1].map(c => String(c || '').trim()); if (cells.some(c => c === '合计' || c === '外贸' || c === '内贸')) { headerRow2 = headerRow1; headerRow1--; } }
+    if (headerRow2 < 0) return records;
+
+    for (let j = 0; j < rows[headerRow2].length; j++) { const c = String(rows[headerRow2][j] || '').trim(); if (/指标|名称|货类|分类|乙/.test(c) || (j === 0 && !c)) { catCol = j; break; } }
+    if (catCol < 0) { for (let j = 0; j < Math.min(rows[headerRow2].length, 5); j++) { const c = String(rows[headerRow2][j] || '').trim(); if (!c || /甲|乙|序号|指标|名称/.test(c)) { catCol = j; break; } } }
+    if (catCol < 0) catCol = 1;
+
+    const row1F = fillForward(rows[headerRow1].map(c => String(c || '').replace(/\s/g, '')));
+    const row2C = rows[headerRow2].map(c => String(c || '').replace(/\s/g, ''));
+    const colMap = [];
+    const colMapKeys = new Set();
+    for (let j = 0; j < rows[headerRow2].length; j++) { const dir = row1F[j] || ''; const tt = row2C[j] || ''; if (dir && tt && DIRECTIONS.includes(dir) && TRADE_TYPES.includes(tt)) { const key = `${dir}|${tt}`; if (!colMapKeys.has(key)) { colMap.push({ col: j, direction: dir, tradeType: tt }); colMapKeys.add(key); } } }
+    if (colMap.length === 0) { for (let j = 0; j < rows[headerRow2].length; j++) { const dir = row1F[j] || ''; const tt = row2C[j] || ''; if (dir && tt) { const key = `${dir}|${tt}`; if (!colMapKeys.has(key)) { colMap.push({ col: j, direction: dir, tradeType: tt }); colMapKeys.add(key); } } } }
+    if (colMap.length === 0) return records;
+
+    let unitCol = -1;
+    for (let j = 0; j < rows[headerRow1].length; j++) { if (/计量单位|单位/.test(String(rows[headerRow1][j] || '').trim())) { unitCol = j; break; } }
+
+    let endFound = false;
+    for (let i = headerRow2 + 1; i < rows.length; i++) {
+        const row = rows[i]; if (!row) continue;
+        let catRaw = String(row[catCol] || '').trim();
+        if (/^(甲|乙|丙|序号|编号)$/.test(catRaw)) continue;
+        if (/单位负责人|统计负责人|填表人|联系电话|报出日期/.test(catRaw)) break;
+        if (!catRaw) continue;
+        if (catRaw === '其中：商品汽车') endFound = true;
+        const category = normalizeCategory(catRaw); if (!category) continue;
+        let unit = '吨'; if (unitCol >= 0 && row[unitCol]) { const u = String(row[unitCol]).trim(); if (u) unit = u; }
+        for (const cm of colMap) {
+            const val = safeNum(row[cm.col]);
+            records.push({ period, region, category, unit, direction: cm.direction, tradeType: cm.tradeType, value: val === null ? 0 : val });
+        }
+        if (endFound) break;
+    }
+    return records;
+}
+
+function parseContainerSheet(rows, sheetName, fileName) {
+    const records = [];
+    if (!rows || rows.length < 3) return records;
+    
+    let containerColIdx = -1;
+    let currentPeriod = null;
+    
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.length === 0) continue;
+        
+        const firstCell = String(row[0] || '').trim();
+        
+        if (firstCell === '指标' || firstCell === '所属组织机构') {
+            containerColIdx = -1;
+            currentPeriod = null;
+            for (let j = 0; j < row.length; j++) {
+                const headerVal = String(row[j] || '').trim();
+                if (headerVal === '集装箱吞吐量(箱数)' || (headerVal.includes('集装箱吞吐量(箱数)') && !headerVal.includes('进港') && !headerVal.includes('出港') && !headerVal.includes('内支线') && !headerVal.includes('国内航线') && !headerVal.includes('重箱'))) {
+                    containerColIdx = j;
+                    const periodMatch = headerVal.match(/\[(\d{4})[\年\-\/]?(\d{1,2})[\年\-\/]?月?\]/);
+                    if (periodMatch) {
+                        currentPeriod = periodMatch[1] + '-' + periodMatch[2].padStart(2, '0');
+                    }
+                    console.log('Found container column at', j, 'period:', currentPeriod, 'header:', headerVal);
+                    break;
+                }
+            }
+            continue;
+        }
+        
+        if (containerColIdx >= 0 && currentPeriod) {
+            const region = detectRegion(firstCell);
+            if (!region) continue;
+            
+            let val = row[containerColIdx];
+            if (val === null || val === undefined) {
+                val = 0;
+            } else if (typeof val === 'string') {
+                val = val.replace(/[,，\s]/g, '');
+                val = parseFloat(val);
+            }
+            if (isNaN(val)) val = 0;
+            
+            console.log('Container data:', currentPeriod, region, val);
+            records.push({
+                period: currentPeriod,
+                region: region,
+                indicator: '集装箱吞吐量(箱数)',
+                value: val
+            });
+        }
+    }
+    
+    console.log('parseContainerSheet result:', records.length, 'records from', sheetName);
+    return records;
+}
+
+async function parseExcelFile(file) {
+    const data = await file.arrayBuffer(); const wb = XLSX.read(data, { type: 'array' });
+    const allRec = []; const containerRec = []; const fn = file.name.replace(/\.\w+$/, ''); const dbg = [];
+    const skippedSheets = [];
+    for (const sn of wb.SheetNames) {
+        const sheet = wb.Sheets[sn]; 
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+        const raw = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: true });
+        dbg.push({ name: sn, totalRows: rows.length, rawRows: rows.slice(0, 25) });
+        console.log('Sheet:', sn, 'rows:', rows.length, 'first 3 rows:', rows.slice(0, 3));
+        const beforeCount = allRec.length;
+        let rec = parseSheetRows(rows, sn, fn);
+        if (rec.length === 0) { rec = parseSheetRows(raw, sn, fn); }
+        if (rec.length === 0 && rows.length >= 3) {
+            const headerText = rows.slice(0, 10).flat().join(' ');
+            if (!detectPeriod(headerText)) {
+                skippedSheets.push(sn);
+            }
+        }
+        for (const r of rec) r._source = `${file.name} / ${sn}`;
+        allRec.push(...rec);
+        let cRec = parseContainerSheet(rows, sn, fn);
+        if (cRec.length === 0) { 
+            console.log('Trying raw data for container parsing...');
+            cRec = parseContainerSheet(raw, sn, fn); 
+        }
+        for (const r of cRec) r._source = `${file.name} / ${sn}`;
+        containerRec.push(...cRec);
+    }
+    const dedupMap = new Map();
+    allRec.forEach(r => {
+        const key = `${r.period}|${r.region}|${r.category}|${r.direction}|${r.tradeType}`;
+        if (!dedupMap.has(key)) dedupMap.set(key, r);
+    });
+    const dedupContainerMap = new Map();
+    containerRec.forEach(r => {
+        const key = `${r.period}|${r.region}|${r.indicator}`;
+        if (!dedupContainerMap.has(key)) dedupContainerMap.set(key, r);
+    });
+    const dedupedRec = Array.from(dedupMap.values());
+    const dedupedContainerRec = Array.from(dedupContainerMap.values());
+    lastDebugInfo = { fileName: file.name, sheets: dbg, parsedCount: allRec.length, containerCount: containerRec.length, dedupedCount: dedupedRec.length, dedupedContainerCount: dedupedContainerRec.length };
+    return { cargoRecords: dedupedRec, containerRecords: dedupedContainerRec, skippedSheets };
+}
+
+function showDebugInfo() {
+    if (!lastDebugInfo) { alert('暂无调试信息'); return; }
+    let html = `<h3>文件: ${esc(lastDebugInfo.fileName)} | 货物解析: ${lastDebugInfo.parsedCount} | 集装箱解析: ${lastDebugInfo.containerCount}</h3>`;
+    for (const s of lastDebugInfo.sheets) {
+        html += `<h4>${esc(s.name)} (${s.totalRows}行)</h4><table border="1" cellpadding="3" style="border-collapse:collapse;font-size:11px;">`;
+        for (let i = 0; i < s.rawRows.length; i++) { html += `<tr><td style="background:#f0f0f0;color:#999;font-size:9px;">${i}</td>`; for (let j = 0; j < Math.min(s.rawRows[i].length, 20); j++) { const v = s.rawRows[i][j]; html += `<td>${v === null || v === undefined ? '<em>null</em>' : esc(String(v))}</td>`; } html += '</tr>'; }
+        html += '</table>';
+    }
+    const w = window.open('', '_blank', 'width=1100,height=700'); w.document.write('<html><body style="font-family:monospace;padding:16px;">' + html + '</body></html>');
+}
+
+function getUnique(field) { return [...new Set(allData.map(r => r[field]).filter(Boolean))].sort(); }
+
+function refreshOverview() {
+    const months = getUnique('period'), regions = getUnique('region'), categories = getUnique('category');
+    document.getElementById('statMonths').textContent = months.length;
+    document.getElementById('statRegions').textContent = regions.length;
+    document.getElementById('statCategories').textContent = categories.length;
+    document.getElementById('statRecords').textContent = allData.length;
+    document.getElementById('monthTags').innerHTML = months.length === 0 ? '<span class="tag">暂无数据</span>' : months.map(m => `<span class="tag">${m.replace('-','年')}月<span class="tag-remove" onclick="deleteMonth('${m}')">×</span></span>`).join('');
+    document.getElementById('regionTags').innerHTML = regions.length === 0 ? '<span class="tag">暂无数据</span>' : regions.map(r => `<span class="tag">${r}</span>`).join('');
+    document.getElementById('monthSelect').innerHTML = '<option value="">-- 请选择 --</option>' + months.map(m => `<option value="${m}">${m.replace('-','年')}月</option>`).join('');
+    document.getElementById('compareMonthContainer').innerHTML = months.map(m => `<label class="cb-item" onclick="toggleCb(this)"><input type="checkbox" value="${m}">${m.replace('-','年')}月</label>`).join('');
+    
+    const containerMonths = [...new Set(containerData.map(r => r.period).filter(Boolean))].sort();
+    const containerMonthCbEl = document.getElementById('containerMonthCb');
+    if (containerMonthCbEl) {
+        containerMonthCbEl.innerHTML = containerMonths.length === 0 ? '<span style="font-size:0.78rem;color:#8ba0b5;">暂无集装箱数据</span>' : containerMonths.map(m => `<label class="cb-item" onclick="toggleCb(this)"><input type="checkbox" value="${m}">${m.replace('-','年')}月</label>`).join('');
+    }
+    
+    renderCheckboxes('qRegionCb', regions); renderCheckboxes('qCategoryCb', categories); renderCheckboxes('qDirCb', DIRECTIONS); renderCheckboxes('qTradeCb', TRADE_TYPES);
+    renderTplTabs();
+    renderOverviewCharts();
+}
+
+function renderCheckboxes(id, items) { document.getElementById(id).innerHTML = items.map(i => `<label class="cb-item checked" onclick="toggleCb(this)"><input type="checkbox" value="${esc(i)}" checked>${esc(i)}</label>`).join(''); }
+function toggleCb(el) { const cb = el.querySelector('input'); cb.checked = !cb.checked; el.classList.toggle('checked', cb.checked); }
+function toggleAllIn(id) { const items = document.getElementById(id).querySelectorAll('.cb-item'); const all = Array.from(items).every(el => el.querySelector('input').checked); items.forEach(el => { const cb = el.querySelector('input'); cb.checked = !all; el.classList.toggle('checked', cb.checked); }); }
+function getChecked(id) { return Array.from(document.getElementById(id).querySelectorAll('input:checked')).map(cb => cb.value); }
+async function deleteMonth(month) { 
+    const pw = prompt('请输入密码：');
+    if (pw !== '8119') { showMessage('密码错误', 'error'); return; }
+    if (!confirm(`确定删除 ${month.replace('-','年')}月 数据？`)) return; 
+    try {
+        await deleteMonthFromCloud(month);
+        await refreshDataFromCloud();
+        refreshOverview();
+        showMessage(`已删除 ${month.replace('-','年')}月 数据`, 'success');
+    } catch(e) {
+        showMessage('删除失败: ' + e.message, 'error');
+    }
+}
+async function deleteSelectedContainerMonths() { 
+    const pw = prompt('请输入密码：');
+    if (pw !== '8119') { showMessage('密码错误', 'error'); return; }
+    const checked = getChecked('containerMonthCb'); if (checked.length === 0) { showMessage('请先选择要删除的月份', 'warning'); return; } if (!confirm(`确定删除所选 ${checked.length} 个月份的集装箱数据？`)) return;
+    try {
+        await deleteContainerMonthsFromCloud(checked);
+        await refreshDataFromCloud();
+        refreshOverview();
+        showMessage(`已删除 ${checked.length} 个月份的集装箱数据`, 'success');
+    } catch(e) {
+        showMessage('删除失败: ' + e.message, 'error');
+    }
+}
+
+let regionChartInst = null, categoryChartInst = null, yoyChartInst = null;
+
+const CHART_COLORS = ['#2c7da0','#e76f51','#2a9d8f','#e9c46a','#6930c3','#f4a261','#264653','#d62828','#6a994e','#9b5de5','#00bbf9','#f15bb5','#fee440','#00f5d4','#3a86ff','#fb8500'];
+
+function toWan(val) { return (val / 10000).toFixed(2); }
+
+function renderOverviewCharts() {
+    const emptyEl = document.getElementById('overviewEmpty');
+    const contentEl = document.getElementById('overviewContent');
+    if (allData.length === 0 && containerData.length === 0) { emptyEl.style.display = 'block'; contentEl.style.display = 'none'; return; }
+    emptyEl.style.display = 'none'; contentEl.style.display = 'block';
+
+    const allMonths = allData.map(r => r.period).filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).sort();
+    const containerMonths = containerData.map(r => r.period).filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).sort();
+    
+    if (allMonths.length === 0 && containerMonths.length === 0) return;
+
+    const currentYear = new Date().getFullYear().toString();
+    const yearMonths = allMonths.filter(m => m.startsWith(currentYear));
+    const containerYearMonths = containerMonths.filter(m => m.startsWith(currentYear));
+    
+    let defaultStartMonth, defaultEndMonth;
+    if (yearMonths.length > 0) {
+        defaultStartMonth = yearMonths[0];
+        defaultEndMonth = yearMonths[yearMonths.length - 1];
+        initCategoryPeriodSelector(allMonths, defaultStartMonth, defaultEndMonth);
+        initRegionPeriodSelector(allMonths, defaultStartMonth, defaultEndMonth);
+        initYoyPeriodSelector(allMonths, defaultStartMonth, defaultEndMonth);
+        renderCategoryChartOnly(currentYear, yearMonths);
+        renderRegionChartOnly(currentYear, yearMonths);
+        renderYoyChartOnly(currentYear, yearMonths);
+    } else if (allMonths.length > 0) {
+        const latestYear = allMonths[allMonths.length - 1].split('-')[0];
+        const latestMonth = allMonths[allMonths.length - 1];
+        defaultStartMonth = latestMonth;
+        defaultEndMonth = latestMonth;
+        initCategoryPeriodSelector(allMonths, defaultStartMonth, defaultEndMonth);
+        initRegionPeriodSelector(allMonths, defaultStartMonth, defaultEndMonth);
+        initYoyPeriodSelector(allMonths, defaultStartMonth, defaultEndMonth);
+        renderCategoryChartOnly(latestYear, [latestMonth]);
+        renderRegionChartOnly(latestYear, [latestMonth]);
+        renderYoyChartOnly(latestYear, [latestMonth]);
+    }
+    
+    if (containerYearMonths.length > 0) {
+        initContainerPeriodSelector(containerMonths, containerYearMonths[0], containerYearMonths[containerYearMonths.length - 1]);
+        renderContainerChartOnly(currentYear, containerYearMonths);
+    } else if (containerMonths.length > 0) {
+        const latestMonth = containerMonths[containerMonths.length - 1];
+        initContainerPeriodSelector(containerMonths, latestMonth, latestMonth);
+        renderContainerChartOnly(latestMonth.split('-')[0], [latestMonth]);
+    }
+}
+
+function initCategoryPeriodSelector(allMonths, defaultStart, defaultEnd) {
+    const startSelect = document.getElementById('categoryPeriodStart');
+    const endSelect = document.getElementById('categoryPeriodEnd');
+    if (!startSelect || !endSelect) return;
+    
+    const options = allMonths.map(m => `<option value="${m}">${m.replace('-','年')}月</option>`).join('');
+    startSelect.innerHTML = options;
+    endSelect.innerHTML = options;
+    
+    if (defaultStart) startSelect.value = defaultStart;
+    if (defaultEnd) endSelect.value = defaultEnd;
+    
+    startSelect.onchange = () => updateCategoryChart();
+    endSelect.onchange = () => updateCategoryChart();
+}
+
+function updateCategoryChart() {
+    const startSelect = document.getElementById('categoryPeriodStart');
+    const endSelect = document.getElementById('categoryPeriodEnd');
+    if (!startSelect || !endSelect) return;
+    
+    const startMonth = startSelect.value;
+    const endMonth = endSelect.value;
+    if (!startMonth || !endMonth) return;
+    
+    const allMonths = getUnique('period');
+    const startIdx = allMonths.indexOf(startMonth);
+    const endIdx = allMonths.indexOf(endMonth);
+    
+    if (startIdx === -1 || endIdx === -1 || startIdx > endIdx) return;
+    
+    const selectedMonths = allMonths.slice(startIdx, endIdx + 1);
+    const year = startMonth.split('-')[0];
+    
+    renderCategoryChartOnly(year, selectedMonths);
+}
+
+function initYoyPeriodSelector(allMonths, defaultStart, defaultEnd) {
+    const startSelect = document.getElementById('yoyPeriodStart');
+    const endSelect = document.getElementById('yoyPeriodEnd');
+    if (!startSelect || !endSelect) return;
+    
+    const options = allMonths.map(m => `<option value="${m}">${m.replace('-','年')}月</option>`).join('');
+    startSelect.innerHTML = options;
+    endSelect.innerHTML = options;
+    
+    if (defaultStart) startSelect.value = defaultStart;
+    if (defaultEnd) endSelect.value = defaultEnd;
+    
+    startSelect.onchange = () => updateYoyChart();
+    endSelect.onchange = () => updateYoyChart();
+}
+
+function updateYoyChart() {
+    const startSelect = document.getElementById('yoyPeriodStart');
+    const endSelect = document.getElementById('yoyPeriodEnd');
+    if (!startSelect || !endSelect) return;
+    
+    const startMonth = startSelect.value;
+    const endMonth = endSelect.value;
+    if (!startMonth || !endMonth) return;
+    
+    const allMonths = getUnique('period');
+    const startIdx = allMonths.indexOf(startMonth);
+    const endIdx = allMonths.indexOf(endMonth);
+    
+    if (startIdx === -1 || endIdx === -1 || startIdx > endIdx) return;
+    
+    const selectedMonths = allMonths.slice(startIdx, endIdx + 1);
+    const year = startMonth.split('-')[0];
+    
+    renderYoyChartOnly(year, selectedMonths);
+}
+
+function initRegionPeriodSelector(allMonths, defaultStart, defaultEnd) {
+    const startSelect = document.getElementById('regionPeriodStart');
+    const endSelect = document.getElementById('regionPeriodEnd');
+    if (!startSelect || !endSelect) return;
+    
+    const options = allMonths.map(m => `<option value="${m}">${m.replace('-','年')}月</option>`).join('');
+    startSelect.innerHTML = options;
+    endSelect.innerHTML = options;
+    
+    if (defaultStart) startSelect.value = defaultStart;
+    if (defaultEnd) endSelect.value = defaultEnd;
+    
+    startSelect.onchange = () => updateRegionChart();
+    endSelect.onchange = () => updateRegionChart();
+}
+
+function updateRegionChart() {
+    const startSelect = document.getElementById('regionPeriodStart');
+    const endSelect = document.getElementById('regionPeriodEnd');
+    if (!startSelect || !endSelect) return;
+    
+    const startMonth = startSelect.value;
+    const endMonth = endSelect.value;
+    if (!startMonth || !endMonth) return;
+    
+    const allMonths = getUnique('period');
+    const startIdx = allMonths.indexOf(startMonth);
+    const endIdx = allMonths.indexOf(endMonth);
+    
+    if (startIdx === -1 || endIdx === -1 || startIdx > endIdx) return;
+    
+    const selectedMonths = allMonths.slice(startIdx, endIdx + 1);
+    const year = startMonth.split('-')[0];
+    
+    renderRegionChartOnly(year, selectedMonths);
+}
+
+function renderRegionChartOnly(year, months) {
+    const startMonth = months[0];
+    const endMonth = months[months.length - 1];
+    const startLabel = startMonth.replace('-', '年') + '月';
+    const endLabel = endMonth.replace('-', '年') + '月';
+    const subText = months.length === 1 ? startLabel : `${startLabel} ~ ${endLabel}`;
+    document.getElementById('regionChartSub').textContent = subText;
+
+    const districtNames = ['吴兴区', '南浔区', '长兴县', '德清县', '安吉县'];
+    const regionData = districtNames.map(d => {
+        return allData
+            .filter(r => months.includes(r.period) && r.region === d && r.direction === '总计' && r.tradeType === '合计' && r.category === '总计')
+            .reduce((sum, r) => sum + (r.value || 0), 0);
+    });
+    const regionTotal = regionData.reduce((s, v) => s + v, 0);
+    const regionLabels = districtNames.map((label, i) => {
+        const val = regionData[i];
+        const pct = regionTotal > 0 ? (val / regionTotal * 100).toFixed(1) : '0.0';
+        return `${label}  ${pct}%  ${toWan(val)}万吨`;
+    });
+
+    if (regionChartInst) regionChartInst.destroy();
+    regionChartInst = new Chart(document.getElementById('regionChart'), {
+        type: 'doughnut',
+        data: {
+            labels: regionLabels,
+            datasets: [{
+                data: regionData,
+                backgroundColor: CHART_COLORS.slice(0, districtNames.length),
+                borderWidth: 2,
+                borderColor: '#fff',
+                hoverOffset: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            cutout: '55%',
+            animation: {
+                animateRotate: true,
+                animateScale: true,
+                duration: 800,
+                easing: 'easeOutQuart'
+            },
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: { font: { size: 12, weight: '500' }, padding: 14, usePointStyle: true, pointStyleWidth: 10, color: '#1a3a4a' }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(26,58,74,0.9)',
+                    titleFont: { size: 13 },
+                    bodyFont: { size: 12 },
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(ctx) {
+                            const val = ctx.parsed;
+                            const pct = regionTotal > 0 ? (val / regionTotal * 100).toFixed(1) : 0;
+                            return ` ${toWan(val)}万吨 (${pct}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderYoyChartOnly(year, months) {
+    const prevYear = String(parseInt(year) - 1);
+    const prevMonths = months.map(m => m.replace(year, prevYear));
+    const yoyCategories = ['总计', '矿建材料', '水泥', '钢铁', '煤炭及制品', '非金属矿石', '石油、天然气及制品'];
+    const yoyCatLabels = ['全部货种', '矿建材料', '水泥', '钢铁', '煤炭及制品', '非金属矿石', '石油天然气及制品'];
+    
+    const thisYearCatData = yoyCategories.map(cat => {
+        return allData
+            .filter(r => months.includes(r.period) && r.region === '全市' && r.direction === '总计' && r.tradeType === '合计' && r.category === cat)
+            .reduce((sum, r) => sum + (r.value || 0), 0);
+    });
+    const lastYearCatData = yoyCategories.map(cat => {
+        return allData
+            .filter(r => prevMonths.includes(r.period) && r.region === '全市' && r.direction === '总计' && r.tradeType === '合计' && r.category === cat)
+            .reduce((sum, r) => sum + (r.value || 0), 0);
+    });
+
+    const yoyTotal = thisYearCatData.reduce((s, v) => s + v, 0);
+    const labelsWithInfo = yoyCatLabels.map((label, i) => {
+        const thisVal = thisYearCatData[i];
+        const lastVal = lastYearCatData[i];
+        const yoyPct = lastVal > 0 ? ((thisVal - lastVal) / lastVal * 100).toFixed(1) : '-';
+        const yoySign = thisVal >= lastVal ? '+' : '';
+        return `${label}  ${toWan(thisVal)}万吨  ${yoySign}${yoyPct}%`;
+    });
+
+    const startMonth = months[0];
+    const endMonth = months[months.length - 1];
+    const startLabel = startMonth.replace('-', '年') + '月';
+    const endLabel = endMonth.replace('-', '年') + '月';
+    const yoySubText = `${year}年 vs ${prevYear}年 同期（全市，${months.length === 1 ? startLabel : startLabel + '~' + endLabel}）`;
+    document.getElementById('yoyChartSub').textContent = yoySubText;
+
+    if (yoyChartInst) yoyChartInst.destroy();
+    yoyChartInst = new Chart(document.getElementById('yoyChart'), {
+        type: 'bar',
+        data: {
+            labels: labelsWithInfo,
+            datasets: [
+                {
+                    label: `${prevYear}年`,
+                    data: lastYearCatData.map(v => v / 10000),
+                    backgroundColor: 'rgba(44,125,160,0.5)',
+                    borderColor: '#2c7da0',
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    borderSkipped: false
+                },
+                {
+                    label: `${year}年`,
+                    data: thisYearCatData.map(v => v / 10000),
+                    backgroundColor: 'rgba(39,119,90,0.6)',
+                    borderColor: '#27775a',
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    borderSkipped: false
+                }
+            ]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: true,
+            aspectRatio: 1.5,
+            animation: {
+                duration: 800,
+                easing: 'easeOutQuart'
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: { display: true, text: '万吨', font: { size: 12, weight: '500' }, color: '#1a3a4a' },
+                    ticks: { font: { size: 11 }, color: '#3a5068' },
+                    grid: { color: 'rgba(0,0,0,0.05)' }
+                },
+                y: {
+                    ticks: { font: { size: 11 }, autoSkip: false, color: '#3a5068' },
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: { 
+                    position: 'top', 
+                    labels: { font: { size: 12, weight: '500' }, padding: 20, usePointStyle: true, pointStyleWidth: 12, color: '#1a3a4a' } 
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(26,58,74,0.9)',
+                    titleFont: { size: 13 },
+                    bodyFont: { size: 12 },
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(ctx) {
+                            return ` ${ctx.dataset.label}: ${ctx.parsed.x.toFixed(2)}万吨`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+let containerChartInst = null;
+
+function initContainerPeriodSelector(allMonths, defaultStart, defaultEnd) {
+    const startSelect = document.getElementById('containerPeriodStart');
+    const endSelect = document.getElementById('containerPeriodEnd');
+    if (!startSelect || !endSelect) return;
+    
+    const options = allMonths.map(m => `<option value="${m}">${m.replace('-','年')}月</option>`).join('');
+    startSelect.innerHTML = options;
+    endSelect.innerHTML = options;
+    
+    if (defaultStart) startSelect.value = defaultStart;
+    if (defaultEnd) endSelect.value = defaultEnd;
+    
+    startSelect.onchange = () => updateContainerChart(allMonths);
+    endSelect.onchange = () => updateContainerChart(allMonths);
+}
+
+function updateContainerChart(allMonths) {
+    const startSelect = document.getElementById('containerPeriodStart');
+    const endSelect = document.getElementById('containerPeriodEnd');
+    if (!startSelect || !endSelect) return;
+    
+    const startMonth = startSelect.value;
+    const endMonth = endSelect.value;
+    if (!startMonth || !endMonth) return;
+    
+    const startIdx = allMonths.indexOf(startMonth);
+    const endIdx = allMonths.indexOf(endMonth);
+    
+    if (startIdx === -1 || endIdx === -1 || startIdx > endIdx) return;
+    
+    const selectedMonths = allMonths.slice(startIdx, endIdx + 1);
+    const year = startMonth.split('-')[0];
+    
+    renderContainerChartOnly(year, selectedMonths);
+}
+
+function renderContainerChartOnly(year, months) {
+    const startMonth = months[0];
+    const endMonth = months[months.length - 1];
+    const startLabel = startMonth.replace('-', '年') + '月';
+    const endLabel = endMonth.replace('-', '年') + '月';
+    const subText = months.length === 1 ? startLabel : `${startLabel} ~ ${endLabel}`;
+    document.getElementById('containerChartSub').textContent = subText;
+
+    const districtNames = ['吴兴区', '南浔区', '德清县', '长兴县', '安吉县'];
+    const regionData = districtNames.map(d => {
+        return containerData
+            .filter(r => months.includes(r.period) && r.region === d)
+            .reduce((sum, r) => sum + (r.value || 0), 0);
+    });
+    const regionTotal = regionData.reduce((s, v) => s + v, 0);
+    
+    const totalDisplay = document.getElementById('containerTotalDisplay');
+    if (totalDisplay) {
+        totalDisplay.textContent = `全市集装箱量：${regionTotal.toLocaleString('zh-CN')}箱`;
+    }
+    
+    const colors = ['#2c7da0', '#e76f51', '#f4a261', '#e9c46a', '#8ecae6'];
+    
+    const labelsWithInfo = districtNames.map((label, i) => {
+        const val = regionData[i];
+        const pct = regionTotal > 0 ? (val / regionTotal * 100).toFixed(1) : '0.0';
+        return `${label}  ${pct}%  ${val.toLocaleString('zh-CN')}箱`;
+    });
+
+    if (containerChartInst) containerChartInst.destroy();
+    containerChartInst = new Chart(document.getElementById('containerChart'), {
+        type: 'doughnut',
+        data: {
+            labels: labelsWithInfo,
+            datasets: [{
+                data: regionData,
+                backgroundColor: colors,
+                borderColor: '#fff',
+                borderWidth: 2,
+                hoverOffset: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            cutout: '55%',
+            animation: {
+                animateRotate: true,
+                animateScale: true,
+                duration: 800,
+                easing: 'easeOutQuart'
+            },
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: { font: { size: 12, weight: '500' }, padding: 14, usePointStyle: true, pointStyleWidth: 10, color: '#1a3a4a' }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(26,58,74,0.9)',
+                    titleFont: { size: 13 },
+                    bodyFont: { size: 12 },
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(ctx) {
+                            const val = ctx.parsed;
+                            const pct = regionTotal > 0 ? (val / regionTotal * 100).toFixed(1) : '0.0';
+                            return ` ${val.toLocaleString('zh-CN')}箱 (${pct}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderCategoryChartOnly(year, months) {
+    const startMonth = months[0];
+    const endMonth = months[months.length - 1];
+    const startLabel = startMonth.replace('-', '年') + '月';
+    const endLabel = endMonth.replace('-', '年') + '月';
+    const subText = months.length === 1 ? startLabel : `${startLabel} ~ ${endLabel}`;
+    document.getElementById('categoryChartSub').textContent = subText;
+
+    const mainCategories = allData
+        .filter(r => months.includes(r.period) && r.region === '全市' && r.direction === '总计' && r.tradeType === '合计' && !r.category.startsWith('其中'))
+        .map(r => r.category)
+        .filter((v, i, a) => a.indexOf(v) === i);
+    const orderedCats = CATEGORY_ORDER.filter(c => mainCategories.includes(c) && c !== '总计');
+    const remainingCats = mainCategories.filter(c => !CATEGORY_ORDER.includes(c) && c !== '总计').sort();
+    const allCats = [...orderedCats, ...remainingCats];
+
+    const catData = allCats.map(cat => {
+        return allData
+            .filter(r => months.includes(r.period) && r.region === '全市' && r.direction === '总计' && r.tradeType === '合计' && r.category === cat)
+            .reduce((sum, r) => sum + (r.value || 0), 0);
+    });
+    const catTotal = catData.reduce((s, v) => s + v, 0);
+    
+    const filteredCats = allCats.filter((_, i) => catData[i] > 0 && (catData[i] / catTotal * 100) >= 0.5);
+    const filteredCatData = catData.filter(v => v > 0 && (v / catTotal * 100) >= 0.5);
+    const filteredCatTotal = filteredCatData.reduce((s, v) => s + v, 0);
+    
+    const catLabels = filteredCats.map((label, i) => {
+        const val = filteredCatData[i];
+        const pct = filteredCatTotal > 0 ? (val / filteredCatTotal * 100).toFixed(1) : '0.0';
+        return `${label}  ${pct}%  ${toWan(val)}万吨`;
+    });
+
+    const totalDisplay = document.getElementById('categoryTotalDisplay');
+    if (totalDisplay) {
+        totalDisplay.textContent = `全市累计吞吐量：${toWan(catTotal)}万吨`;
+    }
+
+    if (categoryChartInst) categoryChartInst.destroy();
+    categoryChartInst = new Chart(document.getElementById('categoryChart'), {
+        type: 'doughnut',
+        data: {
+            labels: catLabels,
+            datasets: [{
+                data: filteredCatData,
+                backgroundColor: CHART_COLORS.slice(0, filteredCats.length).concat(
+                    filteredCats.length > CHART_COLORS.length ? Array(filteredCats.length - CHART_COLORS.length).fill('#b0c4d8') : []
+                ),
+                borderWidth: 2,
+                borderColor: '#fff',
+                hoverOffset: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            cutout: '55%',
+            animation: {
+                animateRotate: true,
+                animateScale: true,
+                duration: 800,
+                easing: 'easeOutQuart'
+            },
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: { font: { size: 11, weight: '500' }, padding: 10, usePointStyle: true, pointStyleWidth: 10, color: '#1a3a4a' }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(26,58,74,0.9)',
+                    titleFont: { size: 13 },
+                    bodyFont: { size: 12 },
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(ctx) {
+                            const val = ctx.parsed;
+                            const pct = filteredCatTotal > 0 ? (val / filteredCatTotal * 100).toFixed(1) : 0;
+                            return ` ${toWan(val)}万吨 (${pct}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createDefaultTemplate() {
+    return {
+        name: `自定义表格${templates.length + 1}`,
+        originalName: null,
+        periodMode: 'single',
+        startMonth: null,
+        endMonth: null,
+        collapsed: false,
+        filters: { periods: [], regions: [], categories: [], directions: [], tradeTypes: [] },
+        showUnit: true
+    };
+}
+
+function renderTplTabs() {
+    const container = document.getElementById('tplTabs');
+    let html = '';
+    templates.forEach((t, i) => {
+        html += `<div class="tpl-tab ${i === activeTplIdx ? 'active' : ''}" onclick="switchTpl(${i})">${esc(t.name)}<span class="tpl-tab-close" onclick="event.stopPropagation();deleteTpl(${i})">×</span></div>`;
+    });
+    if (templates.length < MAX_TEMPLATES) {
+        html += `<button class="tpl-add-btn" onclick="addTpl()" title="新建模板">+</button>`;
+    }
+    container.innerHTML = html;
+    renderTplEditor();
+}
+
+async function addTpl() {
+    if (templates.length >= MAX_TEMPLATES) { showMessage('最多创建10个模板', 'warning'); return; }
+    const tpl = createDefaultTemplate();
+    templates.push(tpl);
+    activeTplIdx = templates.length - 1;
+    await saveTemplatesToCloud();
+    renderTplTabs();
+}
+
+function switchTpl(idx) {
+    if (activeTplIdx === idx) return;
+    activeTplIdx = idx;
+    renderTplTabs();
+    const tpl = templates[idx];
+    if (tpl.collapsed) {
+        renderTplTable();
+        document.getElementById('tplResultArea').style.display = 'block';
+    }
+}
+
+async function deleteTpl(idx) {
+    if (!confirm(`确定删除模板"${templates[idx].name}"？`)) return;
+    const tplId = templates[idx].id;
+    templates.splice(idx, 1);
+    if (activeTplIdx >= templates.length) activeTplIdx = templates.length - 1;
+    await deleteTemplateFromCloud(tplId);
+    await saveTemplatesToCloud();
+    renderTplTabs();
+    document.getElementById('tplResultArea').style.display = 'none';
+}
+
+function renderTplEditor() {
+    const area = document.getElementById('tplEditorArea');
+    if (activeTplIdx < 0 || activeTplIdx >= templates.length) { area.innerHTML = '<div style="color:#8ba0b5;text-align:center;padding:30px;">点击 + 创建自定义表格模板</div>'; return; }
+    const tpl = templates[activeTplIdx];
+    const months = getUnique('period'), regions = getUnique('region'), categories = getUnique('category');
+    const isCollapsed = tpl.collapsed || false;
+    const originalName = tpl.originalName || tpl.name;
+
+    let html = '<div class="tpl-editor">';
+    
+    if (isCollapsed) {
+        html += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">`;
+        html += `<div style="font-size:0.88rem;font-weight:600;color:#1a3a4a;">当前模板：${esc(tpl.name)}</div>`;
+        html += `<button class="btn btn-sm" onclick="expandTplEditor()">自定义修改</button>`;
+        html += `</div>`;
+        html += '</div>';
+        area.innerHTML = html;
+        return;
+    }
+
+    html += `<div class="tpl-editor-row"><label>模板名称</label><input type="text" id="tplName" value="${esc(tpl.name)}" onchange="updateTplName(this.value)"></div>`;
+
+    html += '<div class="tpl-editor-row"><label>表格结构</label><div style="font-size:0.78rem;color:#4a627a;line-height:1.6;">行：月份 → 货物分类（单位）<br>列：地区 → 流向（总计/出港/进港）→ 贸易类型（合计/外贸/内贸）</div></div>';
+
+    html += '<div class="filter-grid" style="margin-top:12px;">';
+    html += `<div class="filter-section"><div class="filter-label">筛选月份</div><div class="period-row" style="margin-bottom:8px;"><select id="tplPeriodMode" onchange="togglePeriodMode(this.value)" style="width:120px;"><option value="single" ${tpl.periodMode !== 'range' ? 'selected' : ''}>单月</option><option value="range" ${tpl.periodMode === 'range' ? 'selected' : ''}>时间段</option></select></div>`;
+    html += `<div id="tplSinglePeriod" style="${tpl.periodMode === 'range' ? 'display:none;' : ''}"><select id="tplSingleMonth" onchange="syncTplFilter()" style="width:160px;"><option value="">-- 请选择月份 --</option>`;
+    months.forEach(m => { const sel = tpl.filters.periods.length === 1 && tpl.filters.periods[0] === m; html += `<option value="${m}" ${sel ? 'selected' : ''}>${m.replace('-','年')}月</option>`; });
+    html += '</select></div>';
+    html += `<div id="tplRangePeriod" style="${tpl.periodMode !== 'range' ? 'display:none;' : ''}"><div class="period-row" style="margin-bottom:6px;"><label style="font-size:0.75rem;">起始月：</label><select id="tplStartMonth" onchange="syncTplFilter()" style="width:140px;"><option value="">-- 请选择 --</option>`;
+    months.forEach(m => { const sel = tpl.startMonth === m; html += `<option value="${m}" ${sel ? 'selected' : ''}>${m.replace('-','年')}月</option>`; });
+    html += '</select></div>';
+    html += `<div class="period-row"><label style="font-size:0.75rem;">结束月：</label><select id="tplEndMonth" onchange="syncTplFilter()" style="width:140px;"><option value="">-- 请选择 --</option>`;
+    months.forEach(m => { const sel = tpl.endMonth === m; html += `<option value="${m}" ${sel ? 'selected' : ''}>${m.replace('-','年')}月</option>`; });
+    html += '</select></div></div>';
+    html += '</div>';
+
+    html += `<div class="filter-section"><div class="filter-label">筛选地区 <span class="select-all" onclick="toggleAllIn('tplRegionCb')">全选/取消</span></div><div id="tplRegionCb" class="checkbox-grid">`;
+    regions.forEach(r => { const chk = tpl.filters.regions.length === 0 || tpl.filters.regions.includes(r); html += `<label class="cb-item ${chk ? 'checked' : ''}" onclick="toggleCb(this);syncTplFilter()"><input type="checkbox" value="${r}" ${chk ? 'checked' : ''}>${r}</label>`; });
+    html += '</div></div>';
+    html += '</div>';
+
+    html += '<div class="filter-grid" style="margin-top:12px;">';
+    html += `<div class="filter-section"><div class="filter-label">筛选货物分类 <span class="select-all" onclick="toggleAllIn('tplCatCb')">全选/取消</span></div><div id="tplCatCb" class="checkbox-grid" style="max-height:140px;overflow-y:auto;">`;
+    categories.forEach(c => { const chk = tpl.filters.categories.length === 0 || tpl.filters.categories.includes(c); html += `<label class="cb-item ${chk ? 'checked' : ''}" onclick="toggleCb(this);syncTplFilter()"><input type="checkbox" value="${esc(c)}" ${chk ? 'checked' : ''}>${esc(c)}</label>`; });
+    html += '</div></div>';
+
+    html += `<div class="filter-section"><div class="filter-label">筛选流向 <span class="select-all" onclick="toggleAllIn('tplDirCb')">全选/取消</span></div><div id="tplDirCb" class="checkbox-grid">`;
+    DIRECTIONS.forEach(d => { const chk = tpl.filters.directions.length === 0 || tpl.filters.directions.includes(d); html += `<label class="cb-item ${chk ? 'checked' : ''}" onclick="toggleCb(this);syncTplFilter()"><input type="checkbox" value="${d}" ${chk ? 'checked' : ''}>${d}</label>`; });
+    html += '</div></div>';
+    html += '</div>';
+
+    html += '<div class="filter-grid" style="margin-top:12px;">';
+    html += `<div class="filter-section"><div class="filter-label">筛选贸易类型 <span class="select-all" onclick="toggleAllIn('tplTradeCb')">全选/取消</span></div><div id="tplTradeCb" class="checkbox-grid">`;
+    TRADE_TYPES.forEach(t => { const chk = tpl.filters.tradeTypes.length === 0 || tpl.filters.tradeTypes.includes(t); html += `<label class="cb-item ${chk ? 'checked' : ''}" onclick="toggleCb(this);syncTplFilter()"><input type="checkbox" value="${t}" ${chk ? 'checked' : ''}>${t}</label>`; });
+    html += '</div></div>';
+
+    html += `<div class="filter-section"><div class="filter-label">显示选项</div><div class="checkbox-grid"><label class="cb-item ${tpl.showUnit ? 'checked' : ''}" onclick="toggleCb(this)"><input type="checkbox" id="tplShowUnit" ${tpl.showUnit ? 'checked' : ''} onchange="syncTplFilter()">显示单位</label></div></div>`;
+    html += '</div>';
+
+    html += '<div class="action-bar" style="margin-top:12px;">';
+    html += '<button class="btn btn-green" onclick="saveCurrentTpl()">💾 保存模板</button>';
+    html += '<button class="btn" onclick="renderTplTable()">生成表格</button>';
+    html += '</div>';
+    html += '</div>';
+    area.innerHTML = html;
+}
+
+function togglePeriodMode(mode) {
+    document.getElementById('tplSinglePeriod').style.display = mode === 'range' ? 'none' : '';
+    document.getElementById('tplRangePeriod').style.display = mode === 'range' ? '' : 'none';
+    if (activeTplIdx >= 0) {
+        templates[activeTplIdx].periodMode = mode;
+    }
+    syncTplFilter();
+}
+
+function expandTplEditor() {
+    if (activeTplIdx >= 0) {
+        templates[activeTplIdx].collapsed = false;
+        renderTplEditor();
+    }
+}
+
+async function updateTplName(name) { 
+    if (activeTplIdx >= 0) { 
+        const tpl = templates[activeTplIdx];
+        if (tpl.originalName === null) {
+            tpl.originalName = tpl.name;
+        }
+        tpl.name = name; 
+        await saveTemplatesToCloud(); 
+        renderTplTabs(); 
+    } 
+}
+
+function syncTplFilter() {
+    if (activeTplIdx < 0) return;
+    const tpl = templates[activeTplIdx];
+    
+    // 检查元素是否存在，不存在则返回（模板可能被折叠）
+    const periodModeEl = document.getElementById('tplPeriodMode');
+    if (!periodModeEl) return;
+    
+    const periodMode = periodModeEl.value;
+    tpl.periodMode = periodMode;
+    
+    if (periodMode === 'single') {
+        const singleMonth = document.getElementById('tplSingleMonth') ? document.getElementById('tplSingleMonth').value : '';
+        tpl.filters.periods = singleMonth ? [singleMonth] : [];
+        tpl.startMonth = null;
+        tpl.endMonth = null;
+    } else {
+        tpl.startMonth = document.getElementById('tplStartMonth') ? document.getElementById('tplStartMonth').value : null;
+        tpl.endMonth = document.getElementById('tplEndMonth') ? document.getElementById('tplEndMonth').value : null;
+        if (tpl.startMonth && tpl.endMonth) {
+            const allMonths = getUnique('period');
+            const startIdx = allMonths.indexOf(tpl.startMonth);
+            const endIdx = allMonths.indexOf(tpl.endMonth);
+            if (startIdx !== -1 && endIdx !== -1 && startIdx <= endIdx) {
+                tpl.filters.periods = allMonths.slice(startIdx, endIdx + 1);
+            } else {
+                tpl.filters.periods = [];
+            }
+        } else {
+            tpl.filters.periods = [];
+        }
+    }
+    
+    // 检查复选框容器是否存在
+    if (document.getElementById('tplRegionCb')) {
+        tpl.filters.regions = getChecked('tplRegionCb');
+        tpl.filters.categories = getChecked('tplCatCb');
+        tpl.filters.directions = getChecked('tplDirCb');
+        tpl.filters.tradeTypes = getChecked('tplTradeCb');
+        tpl.showUnit = document.getElementById('tplShowUnit') ? document.getElementById('tplShowUnit').checked : true;
+    }
+}
+
+async function saveCurrentTpl() {
+    if (activeTplIdx < 0) return;
+    syncTplFilter();
+    const tpl = templates[activeTplIdx];
+    
+    if (tpl.originalName !== null && tpl.name !== tpl.originalName) {
+        tpl.collapsed = true;
+    }
+    
+    await saveTemplatesToCloud();
+    renderTplEditor();
+    renderTplTable();
+    document.getElementById('tplResultArea').style.display = 'block';
+    showMessage(`模板"${tpl.name}"已保存`, 'success');
+}
+
+function getTplFilteredData(tpl) {
+    const f = tpl.filters;
+    return allData.filter(r =>
+        (f.periods.length === 0 || f.periods.includes(r.period)) &&
+        (f.regions.length === 0 || f.regions.includes(r.region)) &&
+        (f.categories.length === 0 || f.categories.includes(r.category)) &&
+        (f.directions.length === 0 || f.directions.includes(r.direction)) &&
+        (f.tradeTypes.length === 0 || f.tradeTypes.includes(r.tradeType))
+    );
+}
+
+function getUniqueValues(data, field) {
+    const vals = [...new Set(data.map(r => r[field]).filter(Boolean))];
+    const orderMap = { direction: DIRECTIONS, tradeType: TRADE_TYPES, region: KNOWN_REGIONS, category: CATEGORY_ORDER };
+    const order = orderMap[field];
+    if (order) {
+        const ordered = order.filter(v => vals.includes(v));
+        const remaining = vals.filter(v => !order.includes(v)).sort();
+        return [...ordered, ...remaining];
+    }
+    return vals.sort();
+}
+
+function renderTplTable() {
+    if (activeTplIdx < 0) return;
+    // 只在 UI 元素存在时同步过滤器（模板未折叠）
+    if (document.getElementById('tplPeriodMode')) {
+        syncTplFilter();
+    }
+    const tpl = templates[activeTplIdx];
+    const data = getTplFilteredData(tpl);
+    if (data.length === 0) { showMessage('无符合条件的数据', 'warning'); return; }
+
+    document.getElementById('tplResultArea').style.display = 'block';
+    const thead = document.getElementById('tplHead');
+    const tbody = document.getElementById('tplBody');
+
+    const isRangeMode = tpl.periodMode === 'range' && tpl.startMonth && tpl.endMonth;
+    const periods = isRangeMode ? [`${tpl.startMonth}~${tpl.endMonth}`] : getUniqueValues(data, 'period');
+    const categories = getUniqueValues(data, 'category');
+    const selRegions = getUniqueValues(data, 'region');
+    const selDirections = getUniqueValues(data, 'direction');
+    const selTradeTypes = getUniqueValues(data, 'tradeType');
+
+    const numColLevels = 3;
+    let headerHtml = '';
+
+    headerHtml += '<tr>';
+    headerHtml += `<th rowspan="${numColLevels}">${isRangeMode ? '时间段' : '月份'}</th>`;
+    headerHtml += `<th rowspan="${numColLevels}">货物分类</th>`;
+    if (tpl.showUnit) headerHtml += `<th rowspan="${numColLevels}">单位</th>`;
+
+    const dirColspan = selTradeTypes.length;
+    const regionColspan = selDirections.length * selTradeTypes.length;
+    selRegions.forEach(r => {
+        headerHtml += `<th colspan="${regionColspan}">${esc(r)}</th>`;
+    });
+    headerHtml += '</tr>';
+
+    headerHtml += '<tr>';
+    selRegions.forEach(() => {
+        selDirections.forEach(d => {
+            headerHtml += `<th${dirColspan > 1 ? ` colspan="${dirColspan}"` : ''}>${esc(d)}</th>`;
+        });
+    });
+    headerHtml += '</tr>';
+
+    headerHtml += '<tr>';
+    selRegions.forEach(() => {
+        selDirections.forEach(() => {
+            selTradeTypes.forEach(t => {
+                headerHtml += `<th>${esc(t)}</th>`;
+            });
+        });
+    });
+    headerHtml += '</tr>';
+
+    thead.innerHTML = headerHtml;
+
+    let bodyHtml = '';
+    for (const period of periods) {
+        for (const cat of categories) {
+            const isTotal = cat === '总计';
+            bodyHtml += `<tr class="${isTotal ? 'total-row' : ''}">`;
+            
+            if (isRangeMode) {
+                const startLabel = tpl.startMonth.replace('-','年') + '月';
+                const endLabel = tpl.endMonth.replace('-','年') + '月';
+                bodyHtml += `<td class="label">${startLabel}~${endLabel}</td>`;
+            } else {
+                bodyHtml += `<td class="label">${esc(period.replace('-','年') + '月')}</td>`;
+            }
+            bodyHtml += `<td class="label">${esc(cat)}</td>`;
+
+            const sampleRec = data.find(r => r.category === cat);
+            const unit = sampleRec ? (sampleRec.unit || '吨') : '吨';
+            if (tpl.showUnit) bodyHtml += `<td>${esc(unit)}</td>`;
+
+            for (const region of selRegions) {
+                for (const direction of selDirections) {
+                    for (const tradeType of selTradeTypes) {
+                        if (isRangeMode) {
+                            const sumVal = data
+                                .filter(r => r.category === cat && r.region === region && r.direction === direction && r.tradeType === tradeType)
+                                .reduce((sum, r) => sum + (r.value || 0), 0);
+                            bodyHtml += `<td class="num">${sumVal > 0 ? fmtNum(sumVal) : '-'}</td>`;
+                        } else {
+                            const rec = data.find(r =>
+                                r.period === period && r.category === cat &&
+                                r.region === region && r.direction === direction && r.tradeType === tradeType
+                            );
+                            bodyHtml += `<td class="num">${rec ? fmtNum(rec.value) : '-'}</td>`;
+                        }
+                    }
+                }
+            }
+            bodyHtml += '</tr>';
+        }
+    }
+    tbody.innerHTML = bodyHtml || '<tr><td colspan="99" class="no-data">无数据</td></tr>';
+}
+
+function quickQuery() {
+    const mode = document.getElementById('modeSelect').value;
+    const selR = getChecked('qRegionCb'), selC = getChecked('qCategoryCb'), selD = getChecked('qDirCb'), selT = getChecked('qTradeCb');
+    let filtered = allData.filter(r => selR.includes(r.region) && selC.includes(r.category) && selD.includes(r.direction) && selT.includes(r.tradeType));
+    if (mode === 'single') { const m = document.getElementById('monthSelect').value; if (m) filtered = filtered.filter(r => r.period === m); }
+    else { const ms = Array.from(document.querySelectorAll('#compareMonthContainer input:checked')).map(cb => cb.value); if (ms.length) filtered = filtered.filter(r => ms.includes(r.period)); }
+    if (filtered.length === 0) { showMessage('无数据', 'warning'); return; }
+
+    const periods = [...new Set(filtered.map(r => r.period))].sort();
+    const regions = [...new Set(filtered.map(r => r.region))].sort();
+    const categories = [...new Set(filtered.map(r => r.category))];
+    const colCombos = []; for (const d of selD) for (const t of selT) colCombos.push({ direction: d, tradeType: t });
+
+    let hHtml = '<tr><th>地区</th><th>月份</th><th>货物分类</th><th>单位</th>';
+    colCombos.forEach(c => { hHtml += `<th>${c.direction}-${c.tradeType}</th>`; });
+    hHtml += '</tr>';
+    document.getElementById('resultHead').innerHTML = hHtml;
+
+    let bHtml = '';
+    for (const region of regions) for (const period of periods) for (const cat of categories) {
+        const isTotal = cat === '总计';
+        const ur = filtered.find(r => r.region === region && r.period === period && r.category === cat);
+        bHtml += `<tr class="${isTotal ? 'total-row' : ''}"><td class="label">${esc(region)}</td><td>${esc(period.replace('-','年')+'月')}</td><td class="label">${esc(cat)}</td><td>${esc(ur?.unit || '吨')}</td>`;
+        for (const c of colCombos) { const rec = filtered.find(r => r.region === region && r.period === period && r.category === cat && r.direction === c.direction && r.tradeType === c.tradeType); bHtml += `<td class="num">${rec ? fmtNum(rec.value) : '-'}</td>`; }
+        bHtml += '</tr>';
+    }
+    document.getElementById('resultBody').innerHTML = bHtml || '<tr><td colspan="99" class="no-data">无数据</td></tr>';
+    document.getElementById('resultCard').style.display = 'block';
+}
+
+function exportCurrentTable() {
+    const tables = document.querySelectorAll('table');
+    let target = null;
+    for (const t of tables) { if (t.querySelector('tbody') && t.querySelector('tbody').children.length > 0 && !t.querySelector('.no-data')) { target = t; } }
+    if (!target) { showMessage('没有可导出的数据', 'warning'); return; }
+    const wb = XLSX.utils.table_to_book(target, { sheet: '查询结果' });
+    XLSX.writeFile(wb, `港口分类货物吞吐量_${new Date().toISOString().slice(0,10)}.xlsx`);
+    showMessage('导出成功', 'success');
+}
+
+let selectedFiles = [];
+document.getElementById('excelFile').addEventListener('change', function(e) { selectedFiles = Array.from(e.target.files); document.getElementById('fileName').innerText = selectedFiles.length ? `已选 ${selectedFiles.length} 个文件` : '未选择文件'; document.getElementById('uploadBtn').disabled = selectedFiles.length === 0; });
+
+document.getElementById('uploadBtn').addEventListener('click', async function() {
+    if (!selectedFiles.length) return;
+    const btn = this; btn.disabled = true; btn.textContent = '上传中...';
+    let allRec = [], containerRec = [], errors = [];
+    for (const file of selectedFiles) { try { const result = await parseExcelFile(file); if (result.cargoRecords.length === 0 && result.containerRecords.length === 0) { let errMsg = '无数据'; if (result.skippedSheets && result.skippedSheets.length > 0) { errMsg = `无法识别月份（表格: ${result.skippedSheets.join(', ')}），请在表标题中注明月份如"2025年12月"`; } errors.push(`${file.name}: ${errMsg}`); } else { allRec.push(...result.cargoRecords); containerRec.push(...result.containerRecords); if (result.skippedSheets && result.skippedSheets.length > 0) { errors.push(`${file.name}: 部分表格跳过（无法识别月份: ${result.skippedSheets.join(', ')}）`); } } } catch (err) { errors.push(`${file.name}: ${err.message}`); } }
+    if (allRec.length === 0 && containerRec.length === 0) {
+        btn.disabled = false; btn.textContent = '上传并解析';
+        showMessage('未解析到有效数据。' + errors.join('; '), 'error');
+        document.getElementById('debugBtnArea').style.display = 'block';
+        return;
+    }
+    try {
+        let cargoSaved = 0, containerSaved = 0;
+        if (allRec.length > 0) {
+            cargoSaved = await saveCargoDataToCloud(allRec);
+        }
+        if (containerRec.length > 0) {
+            containerSaved = await saveContainerDataToCloud(containerRec);
+        }
+        await refreshDataFromCloud();
+        refreshOverview();
+        const cloudCount = await supabaseGetCategoryCount();
+        const countInfo = cloudCount >= 0 ? `，云端共 ${cloudCount} 条` : '';
+        if (allRec.length > 0) {
+            showMessage(`✅ 货物吞吐量 ${cargoSaved} 条，集装箱 ${containerSaved} 条${countInfo}`, 'success');
+        } else if (containerRec.length > 0) {
+            showMessage(`✅ 集装箱数据 ${containerSaved} 条${countInfo}`, 'success');
+        }
+        if (errors.length) showMessage(`部分问题: ${errors.join('; ')}`, 'warning');
+    } catch(e) {
+        showMessage('上传失败: ' + e.message, 'error');
+    }
+    btn.disabled = false; btn.textContent = '上传并解析';
+    selectedFiles = []; document.getElementById('excelFile').value = ''; document.getElementById('fileName').innerText = '未选择文件'; document.getElementById('uploadBtn').disabled = true;
+});
+
+document.getElementById('clearAllBtn').addEventListener('click', async function() {
+    const pw = prompt('请输入密码：');
+    if (pw !== '8119') { showMessage('密码错误', 'error'); return; }
+    if (!confirm('确定清空所有云端数据？此操作不可恢复！')) return;
+    try {
+        await clearAllCloudData();
+        allData = []; containerData = [];
+        refreshOverview();
+        document.getElementById('resultCard').style.display = 'none';
+        document.getElementById('tplResultArea').style.display = 'none';
+        showMessage('✅ 已清空云端数据', 'success');
+    } catch(e) {
+        showMessage('清空失败: ' + e.message, 'error');
+    }
+});
+
+document.getElementById('exportBackupBtn').addEventListener('click', async function() {
+    if (!allData.length && !containerData.length) { showMessage('没有数据', 'warning'); return; }
+    try {
+        await refreshDataFromCloud();
+    } catch(e) {}
+    const backup = { version: 2, cargoRecords: allData, containerRecords: containerData, templates: templates };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `港口分类货物吞吐量备份_${new Date().toISOString().slice(0,10)}.json`;
+    a.click(); URL.revokeObjectURL(a.href);
+    showMessage('备份导出成功', 'success');
+});
+
+document.getElementById('importBackup').addEventListener('change', function(e) {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async function(ev) {
+        try {
+            const imp = JSON.parse(ev.target.result);
+            let cargoRec = [], containerRec = [];
+            if (imp.version === 2) {
+                if (Array.isArray(imp.cargoRecords)) cargoRec = imp.cargoRecords;
+                if (Array.isArray(imp.containerRecords)) containerRec = imp.containerRecords;
+                if (Array.isArray(imp.templates)) { templates = imp.templates; await saveTemplatesToCloud(); }
+            } else if (Array.isArray(imp)) {
+                cargoRec = imp;
+            } else {
+                throw new Error('格式错误');
+            }
+            if (cargoRec.length > 0) await saveCargoDataToCloud(cargoRec);
+            if (containerRec.length > 0) await saveContainerDataToCloud(containerRec);
+            await refreshDataFromCloud();
+            refreshOverview();
+            showMessage(`✅ 导入成功：货物 ${cargoRec.length} 条，集装箱 ${containerRec.length} 条`, 'success');
+        } catch (err) {
+            showMessage('导入失败: ' + err.message, 'error');
+        }
+    };
+    reader.readAsText(file); e.target.value = '';
+});
+
+document.getElementById('modeSelect').addEventListener('change', function() { document.getElementById('singlePeriod').style.display = this.value === 'single' ? 'flex' : 'none'; document.getElementById('comparePeriod').style.display = this.value === 'compare' ? 'flex' : 'none'; });
+
+(async function init() {
+    const pageLoadingEl = document.getElementById('pageLoading');
+    const cloudLoadingEl = document.getElementById('cloudLoadingHint');
+    if (pageLoadingEl) pageLoadingEl.style.display = 'none';
+    if (cloudLoadingEl) cloudLoadingEl.style.display = 'block';
+    try {
+        await supabaseTestConnection();
+        allData = await loadAllDataFromCloud();
+        containerData = await loadContainerDataFromCloud();
+        templates = await loadTemplatesFromCloud();
+        refreshOverview();
+        renderTplTabs();
+        const cnt = await supabaseGetCategoryCount();
+        const countInfo = cnt >= 0 ? `，共 ${cnt} 条记录` : '';
+        showMessage(`✅ Supabase 云端已连接${countInfo}`, 'success');
+    } catch(e) {
+        templates = [];
+        refreshOverview();
+        renderTplTabs();
+        showMessage('⚠️ Supabase 连接失败: ' + e.message, 'error');
+    } finally {
+        if (cloudLoadingEl) cloudLoadingEl.style.display = 'none';
+    }
+})();
+</script>
+</body>
+</html>
