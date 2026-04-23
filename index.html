@@ -367,7 +367,7 @@ async function saveCargoDataToCloud(records) {
     let savedCount = 0;
     for (let i = 0; i < rows.length; i += batchSize) {
         const batch = rows.slice(i, i + batchSize);
-        const url = `${SUPABASE_URL}/rest/v1/${CATEGORY_TABLE}`;
+        const url = `${SUPABASE_URL}/rest/v1/${CATEGORY_TABLE}?on_conflict=period,region,category,direction,trade_type`;
         let retries = 3;
         let lastError = null;
         while (retries > 0) {
@@ -415,7 +415,7 @@ async function saveContainerDataToCloud(records) {
     let savedCount = 0;
     for (let i = 0; i < rows.length; i += batchSize) {
         const batch = rows.slice(i, i + batchSize);
-        const url = `${SUPABASE_URL}/rest/v1/${CONTAINER_TABLE}`;
+        const url = `${SUPABASE_URL}/rest/v1/${CONTAINER_TABLE}?on_conflict=period,region,indicator`;
         let retries = 3;
         let lastError = null;
         while (retries > 0) {
