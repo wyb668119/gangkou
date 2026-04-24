@@ -810,30 +810,31 @@ function parseProvinceSheet(rows, sheetName) {
     let inlandCol = -1;
     for (let i = 0; i < Math.min(rows.length, 5); i++) {
         const cells = rows[i].map(c => String(c || '').trim().replace(/\s/g, ''));
-        for (let j = 0; j < cells.length; j++) {
-            if (cells[j] === '内河' || cells[j] === '内河吞吐量') {
-                inlandCol = j;
-                break;
+        if (cells.includes('沿海') && cells.includes('内河') && cells.includes('合计')) {
+            for (let j = 0; j < cells.length; j++) {
+                if (cells[j] === '内河') {
+                    inlandCol = j;
+                }
             }
+            if (inlandCol >= 0) break;
         }
-        if (inlandCol >= 0) break;
     }
     
     if (inlandCol < 0) {
         for (let i = 0; i < Math.min(rows.length, 5); i++) {
             const cells = rows[i].map(c => String(c || '').trim().replace(/\s/g, ''));
             for (let j = 0; j < cells.length; j++) {
-                if (cells[j].includes('内河')) {
+                if (cells[j] === '内河') {
                     inlandCol = j;
-                    break;
                 }
             }
-            if (inlandCol >= 0) break;
         }
     }
     if (inlandCol < 0) return records;
     
-    for (let i = 0; i < Math.min(rows.length, 20); i++) {
+    console.log('parseProvinceSheet: period=', period, 'inlandCol=', inlandCol);
+    
+    for (let i = 4; i < Math.min(rows.length, 20); i++) {
         const row = rows[i];
         if (!row) continue;
         const regionRaw = String(row[0] || '').trim().replace(/[\s　]/g, '');
@@ -849,6 +850,7 @@ function parseProvinceSheet(rows, sheetName) {
         if (!matchedRegion) continue;
         
         const val = safeNum(row[inlandCol]);
+        console.log('parseProvinceSheet: region=', matchedRegion, 'inlandCol=', inlandCol, 'val=', val, 'raw=', row[inlandCol]);
         if (val === null || val === 0) continue;
         
         records.push({
@@ -858,6 +860,7 @@ function parseProvinceSheet(rows, sheetName) {
         });
     }
     
+    console.log('parseProvinceSheet result:', records.length, 'records');
     return records;
 }
 
