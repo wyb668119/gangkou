@@ -1142,12 +1142,17 @@ function renderYoyChartOnly(year, months) {
     });
 
     const yoyTotal = thisYearCatData.reduce((s, v) => s + v, 0);
+    const yoyPctList = yoyCatLabels.map((label, i) => {
+        const thisVal = thisYearCatData[i];
+        const lastVal = lastYearCatData[i];
+        return lastVal > 0 ? ((thisVal - lastVal) / lastVal * 100).toFixed(1) : '0.0';
+    });
     const labelsWithInfo = yoyCatLabels.map((label, i) => {
         const thisVal = thisYearCatData[i];
         const lastVal = lastYearCatData[i];
-        const yoyPct = lastVal > 0 ? ((thisVal - lastVal) / lastVal * 100).toFixed(1) : '-';
-        const yoySign = thisVal >= lastVal ? '+' : '';
-        return `${label}  ${toWan(thisVal)}万吨  ${yoySign}${yoyPct}%`;
+        const yoyPct = yoyPctList[i];
+        const yoySign = parseFloat(yoyPct) >= 0 ? '+' : '';
+        return { text: `${label}  ${toWan(thisVal)}万吨  ${yoySign}${yoyPct}%`, isNegative: parseFloat(yoyPct) < 0, isFirst: i === 0 };
     });
 
     const startMonth = months[0];
@@ -1158,10 +1163,11 @@ function renderYoyChartOnly(year, months) {
     document.getElementById('yoyChartSub').textContent = yoySubText;
 
     if (yoyChartInst) yoyChartInst.destroy();
+    const chartLabels = labelsWithInfo.map(item => item.text);
     yoyChartInst = new Chart(document.getElementById('yoyChart'), {
         type: 'bar',
         data: {
-            labels: labelsWithInfo,
+            labels: chartLabels,
             datasets: [
                 {
                     label: `${prevYear}年`,
@@ -1200,7 +1206,16 @@ function renderYoyChartOnly(year, months) {
                     grid: { color: 'rgba(0,0,0,0.05)' }
                 },
                 y: {
-                    ticks: { font: { size: 11 }, autoSkip: false, color: '#3a5068' },
+                    ticks: {
+                        font: { size: 11 },
+                        autoSkip: false,
+                        color: function(context) {
+                            const item = labelsWithInfo[context.index];
+                            if (item && item.isFirst) return '#1a3a4a';
+                            if (item && item.isNegative) return '#c0392b';
+                            return '#3a5068';
+                        }
+                    },
                     grid: { display: false }
                 }
             },
