@@ -809,30 +809,33 @@ function parseProvinceSheet(rows, sheetName) {
     
     let inlandCol = -1;
     for (let i = 0; i < Math.min(rows.length, 5); i++) {
-        const cells = rows[i].map(c => String(c || '').trim().replace(/\s/g, ''));
+        const cells = rows[i].map(c => String(c || '').trim().replace(/[\s　]/g, ''));
         if (cells.includes('沿海') && cells.includes('内河') && cells.includes('合计')) {
-            for (let j = 0; j < cells.length; j++) {
-                if (cells[j] === '内河') {
-                    inlandCol = j;
-                }
-            }
-            if (inlandCol >= 0) break;
+            inlandCol = cells.indexOf('内河');
+            break;
         }
     }
     
     if (inlandCol < 0) {
         for (let i = 0; i < Math.min(rows.length, 5); i++) {
-            const cells = rows[i].map(c => String(c || '').trim().replace(/\s/g, ''));
-            for (let j = 0; j < cells.length; j++) {
-                if (cells[j] === '内河') {
-                    inlandCol = j;
-                }
+            const cells = rows[i].map(c => String(c || '').trim().replace(/[\s　]/g, ''));
+            if (cells.includes('沿海') || cells.includes('内河')) {
+                inlandCol = cells.indexOf('内河');
+                if (inlandCol >= 0) break;
             }
+        }
+    }
+    if (inlandCol < 0) {
+        for (let i = 0; i < Math.min(rows.length, 5); i++) {
+            const cells = rows[i].map(c => String(c || '').trim().replace(/[\s　]/g, ''));
+            inlandCol = cells.indexOf('内河');
+            if (inlandCol >= 0) break;
         }
     }
     if (inlandCol < 0) return records;
     
     console.log('parseProvinceSheet: period=', period, 'inlandCol=', inlandCol);
+    console.log('Header row cells:', rows[3] ? rows[3].map(c => String(c||'').trim()) : 'N/A');
     
     for (let i = 4; i < Math.min(rows.length, 20); i++) {
         const row = rows[i];
@@ -989,12 +992,9 @@ async function parseExcelFile(file) {
         console.log('Sheet:', sn, 'rows:', rows.length, 'first 3 rows:', rows.slice(0, 3));
         
         if (isProvinceStatsSheet(rows)) {
-            const pRec = parseProvinceSheet(rows, sn);
-            if (pRec.length === 0) {
-                const pRecRaw = parseProvinceSheet(raw, sn);
-                for (const r of pRecRaw) r._source = `${file.name} / ${sn}`;
-                provinceRec.push(...pRecRaw);
-            } else {
+            const pRecRaw = parseProvinceSheet(raw, sn);
+            const pRec = pRecRaw.length > 0 ? pRecRaw : parseProvinceSheet(rows, sn);
+            if (pRec.length > 0) {
                 for (const r of pRec) r._source = `${file.name} / ${sn}`;
                 provinceRec.push(...pRec);
             }
