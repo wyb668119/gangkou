@@ -103,21 +103,6 @@
         .chart-center-label .center-val { font-size: 1.1rem; font-weight: 700; color: #1a3a4a; }
         .chart-center-label .center-unit { font-size: 0.68rem; color: #7f8fa4; }
         @media (max-width: 768px) { .overview-grid { grid-template-columns: 1fr; } }
-        .ranking-list { list-style: none; padding: 0; margin: 0; }
-        .ranking-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-bottom: 1px solid #eef2f7; font-size: 0.8rem; transition: background 0.15s; }
-        .ranking-item:hover { background: #f8fafd; }
-        .ranking-item:last-child { border-bottom: none; }
-        .ranking-pos { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.72rem; flex-shrink: 0; }
-        .ranking-pos.gold { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #fff; }
-        .ranking-pos.silver { background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%); color: #fff; }
-        .ranking-pos.bronze { background: linear-gradient(135deg, #d97706 0%, #b45309 100%); color: #fff; }
-        .ranking-pos.normal { background: #eef2f7; color: #7f8fa4; }
-        .ranking-region { flex: 1; font-weight: 500; color: #1a3a4a; }
-        .ranking-val { font-weight: 700; color: #2c7da0; font-variant-numeric: tabular-nums; }
-        .ranking-unit { font-size: 0.68rem; color: #7f8fa4; margin-left: 2px; }
-        .ranking-bar-bg { width: 100%; height: 4px; background: #eef2f7; border-radius: 2px; margin-top: 3px; }
-        .ranking-bar { height: 4px; border-radius: 2px; background: linear-gradient(90deg, #2c7da0 0%, #3a9bc0 100%); transition: width 0.5s ease; }
-        .ranking-period { font-size: 0.72rem; color: #7f8fa4; margin-bottom: 8px; }
     </style>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
@@ -150,16 +135,15 @@
                 <input type="file" id="importBackup" accept=".json" style="display:none;">
                 <button class="btn btn-sm" onclick="document.getElementById('importBackup').click()">导入备份</button>
             </div>
-            <div class="help-text">💡 支持上传行业统计平台生成的港口分类货物吞吐量表，以及浙江省港口生产主要统计指标表（自动提取各地区内河吞吐量）。列有两层表头：第一层（总计/出港/进港），第二层（合计/外贸/内贸）。地区和月份自动识别。数据通过 Supabase 云端实时同步，所有用户共享同一数据库。</div>
+            <div class="help-text">💡 支持上传行业统计平台生成的港口分类货物吞吐量表。列有两层表头：第一层（总计/出港/进港），第二层（合计/外贸/内贸）。地区和月份自动识别。数据通过 Supabase 云端实时同步，所有用户共享同一数据库。</div>
             <div id="uploadMsg" class="msg-area"></div>
             <div id="debugBtnArea" style="display:none;margin-top:10px;">
                 <button class="btn btn-orange btn-sm" onclick="showDebugInfo()">🔍 查看Excel原始数据</button>
             </div>
         </div>
 
-        <div style="display:flex;gap:14px;flex-wrap:wrap;">
-        <div class="card" style="flex:1;min-width:300px;">
-            <div class="card-title">📋 已上传数据概览</div>
+        <div class="card">
+            <div class="card-title">� 已上传数据概览</div>
             <div class="stats-bar">
                 <div class="stat-item"><div class="stat-val" id="statMonths">0</div><div class="stat-label">月份数</div></div>
                 <div class="stat-item"><div class="stat-val" id="statRegions">0</div><div class="stat-label">地区数</div></div>
@@ -175,13 +159,6 @@
                 <div><div class="filter-label">涉及地区</div><div id="regionTags" class="tag-container"><span class="tag">暂无数据</span></div></div>
                 <div><div class="filter-label">集装箱数据月份 <span class="select-all" onclick="toggleAllIn('containerMonthCb')">全选/取消</span></div><div id="containerMonthCb" class="checkbox-grid"></div><button class="btn btn-red btn-sm" style="margin-top:8px;" onclick="deleteSelectedContainerMonths()">删除所选月份</button></div>
             </div>
-        </div>
-        <div class="card" style="flex:0 0 320px;min-width:260px;">
-            <div class="card-title">🏆 全省内河吞吐量排行</div>
-            <div id="provinceRankingContent">
-                <div style="text-align:center;color:#8ba0b5;padding:20px;font-size:0.82rem;">暂无全省数据，请上传浙江省港口生产主要统计指标表</div>
-            </div>
-        </div>
         </div>
 
         <div class="card">
@@ -284,7 +261,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const CATEGORY_TABLE = 'gangkou_category_data';
 const CONTAINER_TABLE = 'gangkou_container_data';
 const TEMPLATE_TABLE = 'gangkou_templates';
-const PROVINCE_TABLE = 'gangkou_province_data';
 const MAX_TEMPLATES = 10;
 const KNOWN_REGIONS = ['全市', '吴兴区', '南浔区', '长兴县', '德清县', '安吉县', '南太湖新区'];
 const DIRECTIONS = ['总计', '出港', '进港'];
@@ -299,7 +275,6 @@ const CATEGORY_ORDER = [
 
 let allData = [];
 let containerData = [];
-let provinceData = [];
 let templates = [];
 let activeTplIdx = -1;
 let lastDebugInfo = null;
@@ -562,94 +537,9 @@ async function clearAllCloudData() {
     }
 }
 
-async function loadProvinceDataFromCloud() {
-    try {
-        const allRecords = [];
-        let offset = 0;
-        const pageSize = 500;
-        let hasMore = true;
-        while (hasMore) {
-            const url = `${SUPABASE_URL}/rest/v1/${PROVINCE_TABLE}?select=*&order=id&offset=${offset}&limit=${pageSize}`;
-            const resp = await fetch(url, { headers: sbHeaders() });
-            if (!resp.ok) {
-                const errBody = await resp.text();
-                console.error('查询全省数据失败:', errBody);
-                return [];
-            }
-            const rows = await resp.json();
-            allRecords.push(...rows);
-            if (rows.length < pageSize) hasMore = false;
-            else offset += pageSize;
-        }
-        return allRecords.map(r => ({
-            period: r.period,
-            region: r.region,
-            inlandThroughput: Number(r.inland_throughput) || 0
-        }));
-    } catch (e) {
-        console.error('加载全省数据异常:', e);
-        return [];
-    }
-}
-
-async function saveProvinceDataToCloud(records) {
-    if (!records || records.length === 0) return 0;
-    const rowMap = new Map();
-    records.forEach(r => {
-        const period = String(r.period || '').trim();
-        const region = String(r.region || '').trim();
-        const key = `${period}|${region}`;
-        rowMap.set(key, {
-            period,
-            region,
-            inland_throughput: r.inlandThroughput || 0
-        });
-    });
-    const rows = Array.from(rowMap.values());
-    const batchSize = 50;
-    let savedCount = 0;
-    for (let i = 0; i < rows.length; i += batchSize) {
-        const batch = rows.slice(i, i + batchSize);
-        const url = `${SUPABASE_URL}/rest/v1/${PROVINCE_TABLE}?on_conflict=period,region`;
-        let retries = 3;
-        let lastError = null;
-        while (retries > 0) {
-            try {
-                const resp = await fetch(url, {
-                    method: 'POST',
-                    headers: sbHeaders({ 'Prefer': 'return=representation,resolution=merge-duplicates' }),
-                    body: JSON.stringify(batch)
-                });
-                if (!resp.ok) {
-                    const errBody = await resp.text();
-                    if ((resp.status === 429 || resp.status >= 500) && retries > 1) {
-                        retries--;
-                        await delay(1500);
-                        continue;
-                    }
-                    throw new Error(`写入全省数据失败(${resp.status}): ${errBody}`);
-                }
-                const result = await resp.json();
-                savedCount += Array.isArray(result) ? result.length : batch.length;
-                break;
-            } catch (err) {
-                lastError = err;
-                if (retries <= 1) throw lastError;
-                retries--;
-                await delay(1500);
-            }
-        }
-        if (i + batchSize < rows.length) {
-            await delay(300);
-        }
-    }
-    return savedCount;
-}
-
 async function refreshDataFromCloud() {
     allData = await loadAllDataFromCloud();
     containerData = await loadContainerDataFromCloud();
-    provinceData = await loadProvinceDataFromCloud();
 }
 
 async function loadTemplatesFromCloud() {
@@ -777,96 +667,6 @@ function normalizeCategory(name) {
 
 function fillForward(arr) { const result = [...arr]; let last = ''; for (let i = 0; i < result.length; i++) { const v = String(result[i] || '').trim(); if (v) last = v; result[i] = last; } return result; }
 
-function isProvinceStatsSheet(rows) {
-    if (!rows || rows.length < 5) return false;
-    for (let i = 0; i < Math.min(rows.length, 3); i++) {
-        const rowStr = rows[i].map(c => String(c || '')).join(' ');
-        if (/浙江省港口生产主要统计指标/.test(rowStr)) return true;
-    }
-    return false;
-}
-
-function parseProvinceSheet(rows, sheetName) {
-    const records = [];
-    if (!rows || rows.length < 5) return records;
-    
-    let period = null;
-    for (let i = 0; i < Math.min(rows.length, 3); i++) {
-        const rowStr = rows[i].map(c => String(c || '')).join(' ');
-        const m = rowStr.match(/(\d{4})\s*年\s*(\d{1,2})\s*月/);
-        if (m) {
-            period = m[1] + '-' + m[2].padStart(2, '0');
-            break;
-        }
-    }
-    if (!period) {
-        const m = sheetName.match(/(\d{4})[.\-\/](\d{1,2})/);
-        if (m) period = m[1] + '-' + m[2].padStart(2, '0');
-    }
-    if (!period) return records;
-    
-    const PROVINCE_REGIONS = ['杭州', '宁波', '温州', '嘉兴', '湖州', '绍兴', '金华', '衢州', '舟山', '台州', '丽水'];
-    
-    let inlandCol = -1;
-    for (let i = 0; i < Math.min(rows.length, 5); i++) {
-        const cells = rows[i].map(c => String(c || '').trim().replace(/[\s　]/g, ''));
-        if (cells.includes('沿海') && cells.includes('内河') && cells.includes('合计')) {
-            inlandCol = cells.indexOf('内河');
-            break;
-        }
-    }
-    
-    if (inlandCol < 0) {
-        for (let i = 0; i < Math.min(rows.length, 5); i++) {
-            const cells = rows[i].map(c => String(c || '').trim().replace(/[\s　]/g, ''));
-            if (cells.includes('沿海') || cells.includes('内河')) {
-                inlandCol = cells.indexOf('内河');
-                if (inlandCol >= 0) break;
-            }
-        }
-    }
-    if (inlandCol < 0) {
-        for (let i = 0; i < Math.min(rows.length, 5); i++) {
-            const cells = rows[i].map(c => String(c || '').trim().replace(/[\s　]/g, ''));
-            inlandCol = cells.indexOf('内河');
-            if (inlandCol >= 0) break;
-        }
-    }
-    if (inlandCol < 0) return records;
-    
-    console.log('parseProvinceSheet: period=', period, 'inlandCol=', inlandCol);
-    console.log('Header row cells:', rows[3] ? rows[3].map(c => String(c||'').trim()) : 'N/A');
-    
-    for (let i = 4; i < Math.min(rows.length, 20); i++) {
-        const row = rows[i];
-        if (!row) continue;
-        const regionRaw = String(row[0] || '').trim().replace(/[\s　]/g, '');
-        if (!regionRaw) continue;
-        
-        let matchedRegion = null;
-        for (const pr of PROVINCE_REGIONS) {
-            if (regionRaw === pr || regionRaw.startsWith(pr)) {
-                matchedRegion = pr;
-                break;
-            }
-        }
-        if (!matchedRegion) continue;
-        
-        const val = safeNum(row[inlandCol]);
-        console.log('parseProvinceSheet: region=', matchedRegion, 'inlandCol=', inlandCol, 'val=', val, 'raw=', row[inlandCol]);
-        if (val === null || val === 0) continue;
-        
-        records.push({
-            period,
-            region: matchedRegion,
-            inlandThroughput: val
-        });
-    }
-    
-    console.log('parseProvinceSheet result:', records.length, 'records');
-    return records;
-}
-
 function parseSheetRows(rows, sheetName, fileName) {
     const records = [];
     if (!rows || rows.length < 3) return records;
@@ -982,7 +782,7 @@ function parseContainerSheet(rows, sheetName, fileName) {
 
 async function parseExcelFile(file) {
     const data = await file.arrayBuffer(); const wb = XLSX.read(data, { type: 'array' });
-    const allRec = []; const containerRec = []; const provinceRec = []; const fn = file.name.replace(/\.\w+$/, ''); const dbg = [];
+    const allRec = []; const containerRec = []; const fn = file.name.replace(/\.\w+$/, ''); const dbg = [];
     const skippedSheets = [];
     for (const sn of wb.SheetNames) {
         const sheet = wb.Sheets[sn]; 
@@ -990,17 +790,6 @@ async function parseExcelFile(file) {
         const raw = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: true });
         dbg.push({ name: sn, totalRows: rows.length, rawRows: rows.slice(0, 25) });
         console.log('Sheet:', sn, 'rows:', rows.length, 'first 3 rows:', rows.slice(0, 3));
-        
-        if (isProvinceStatsSheet(rows)) {
-            const pRecRaw = parseProvinceSheet(raw, sn);
-            const pRec = pRecRaw.length > 0 ? pRecRaw : parseProvinceSheet(rows, sn);
-            if (pRec.length > 0) {
-                for (const r of pRec) r._source = `${file.name} / ${sn}`;
-                provinceRec.push(...pRec);
-            }
-            continue;
-        }
-        
         const beforeCount = allRec.length;
         let rec = parseSheetRows(rows, sn, fn);
         if (rec.length === 0) { rec = parseSheetRows(raw, sn, fn); }
@@ -1030,16 +819,10 @@ async function parseExcelFile(file) {
         const key = `${r.period}|${r.region}|${r.indicator}`;
         if (!dedupContainerMap.has(key)) dedupContainerMap.set(key, r);
     });
-    const dedupProvinceMap = new Map();
-    provinceRec.forEach(r => {
-        const key = `${r.period}|${r.region}`;
-        if (!dedupProvinceMap.has(key)) dedupProvinceMap.set(key, r);
-    });
     const dedupedRec = Array.from(dedupMap.values());
     const dedupedContainerRec = Array.from(dedupContainerMap.values());
-    const dedupedProvinceRec = Array.from(dedupProvinceMap.values());
-    lastDebugInfo = { fileName: file.name, sheets: dbg, parsedCount: allRec.length, containerCount: containerRec.length, provinceCount: provinceRec.length, dedupedCount: dedupedRec.length, dedupedContainerCount: dedupedContainerRec.length, dedupedProvinceCount: dedupedProvinceRec.length };
-    return { cargoRecords: dedupedRec, containerRecords: dedupedContainerRec, provinceRecords: dedupedProvinceRec, skippedSheets };
+    lastDebugInfo = { fileName: file.name, sheets: dbg, parsedCount: allRec.length, containerCount: containerRec.length, dedupedCount: dedupedRec.length, dedupedContainerCount: dedupedContainerRec.length };
+    return { cargoRecords: dedupedRec, containerRecords: dedupedContainerRec, skippedSheets };
 }
 
 function showDebugInfo() {
@@ -1075,58 +858,12 @@ function refreshOverview() {
     renderCheckboxes('qRegionCb', regions); renderCheckboxes('qCategoryCb', categories); renderCheckboxes('qDirCb', DIRECTIONS); renderCheckboxes('qTradeCb', TRADE_TYPES);
     renderTplTabs();
     renderOverviewCharts();
-    renderProvinceRanking();
 }
 
 function renderCheckboxes(id, items) { document.getElementById(id).innerHTML = items.map(i => `<label class="cb-item checked" onclick="toggleCb(this)"><input type="checkbox" value="${esc(i)}" checked>${esc(i)}</label>`).join(''); }
 function toggleCb(el) { const cb = el.querySelector('input'); cb.checked = !cb.checked; el.classList.toggle('checked', cb.checked); }
 function toggleAllIn(id) { const items = document.getElementById(id).querySelectorAll('.cb-item'); const all = Array.from(items).every(el => el.querySelector('input').checked); items.forEach(el => { const cb = el.querySelector('input'); cb.checked = !all; el.classList.toggle('checked', cb.checked); }); }
 function getChecked(id) { return Array.from(document.getElementById(id).querySelectorAll('input:checked')).map(cb => cb.value); }
-
-function renderProvinceRanking() {
-    const container = document.getElementById('provinceRankingContent');
-    if (!container) return;
-    if (!provinceData || provinceData.length === 0) {
-        container.innerHTML = '<div style="text-align:center;color:#8ba0b5;padding:20px;font-size:0.82rem;">暂无全省数据，请上传浙江省港口生产主要统计指标表</div>';
-        return;
-    }
-    
-    const periods = [...new Set(provinceData.map(r => r.period))].sort();
-    const latestPeriod = periods[periods.length - 1];
-    
-    const latestData = provinceData.filter(r => r.period === latestPeriod);
-    latestData.sort((a, b) => b.inlandThroughput - a.inlandThroughput);
-    
-    const maxVal = latestData.length > 0 ? latestData[0].inlandThroughput : 1;
-    
-    let html = `<div class="ranking-period">截至 ${latestPeriod.replace('-', '年')}月 自年初累计（万吨）</div>`;
-    html += '<ul class="ranking-list">';
-    latestData.forEach((item, idx) => {
-        const pos = idx + 1;
-        let posClass = 'normal';
-        if (pos === 1) posClass = 'gold';
-        else if (pos === 2) posClass = 'silver';
-        else if (pos === 3) posClass = 'bronze';
-        
-        const barWidth = maxVal > 0 ? (item.inlandThroughput / maxVal * 100) : 0;
-        const displayVal = item.inlandThroughput >= 10000 
-            ? (item.inlandThroughput / 10000).toFixed(2) + '亿' 
-            : item.inlandThroughput.toFixed(1);
-        
-        html += `<li class="ranking-item">
-            <span class="ranking-pos ${posClass}">${pos}</span>
-            <div style="flex:1;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span class="ranking-region">${esc(item.region)}</span>
-                    <span><span class="ranking-val">${displayVal}</span><span class="ranking-unit">万吨</span></span>
-                </div>
-                <div class="ranking-bar-bg"><div class="ranking-bar" style="width:${barWidth}%"></div></div>
-            </div>
-        </li>`;
-    });
-    html += '</ul>';
-    container.innerHTML = html;
-}
 async function deleteMonth(month) { 
     const pw = prompt('请输入密码：');
     if (pw !== '8119') { showMessage('密码错误', 'error'); return; }
@@ -2070,35 +1807,30 @@ document.getElementById('excelFile').addEventListener('change', function(e) { se
 document.getElementById('uploadBtn').addEventListener('click', async function() {
     if (!selectedFiles.length) return;
     const btn = this; btn.disabled = true; btn.textContent = '上传中...';
-    let allRec = [], containerRec = [], provinceRec = [], errors = [];
-    for (const file of selectedFiles) { try { const result = await parseExcelFile(file); if (result.cargoRecords.length === 0 && result.containerRecords.length === 0 && result.provinceRecords.length === 0) { let errMsg = '无数据'; if (result.skippedSheets && result.skippedSheets.length > 0) { errMsg = `无法识别月份（表格: ${result.skippedSheets.join(', ')}），请在表标题中注明月份如"2025年12月"`; } errors.push(`${file.name}: ${errMsg}`); } else { allRec.push(...result.cargoRecords); containerRec.push(...result.containerRecords); provinceRec.push(...result.provinceRecords); if (result.skippedSheets && result.skippedSheets.length > 0) { errors.push(`${file.name}: 部分表格跳过（无法识别月份: ${result.skippedSheets.join(', ')}）`); } } } catch (err) { errors.push(`${file.name}: ${err.message}`); } }
-    if (allRec.length === 0 && containerRec.length === 0 && provinceRec.length === 0) {
+    let allRec = [], containerRec = [], errors = [];
+    for (const file of selectedFiles) { try { const result = await parseExcelFile(file); if (result.cargoRecords.length === 0 && result.containerRecords.length === 0) { let errMsg = '无数据'; if (result.skippedSheets && result.skippedSheets.length > 0) { errMsg = `无法识别月份（表格: ${result.skippedSheets.join(', ')}），请在表标题中注明月份如"2025年12月"`; } errors.push(`${file.name}: ${errMsg}`); } else { allRec.push(...result.cargoRecords); containerRec.push(...result.containerRecords); if (result.skippedSheets && result.skippedSheets.length > 0) { errors.push(`${file.name}: 部分表格跳过（无法识别月份: ${result.skippedSheets.join(', ')}）`); } } } catch (err) { errors.push(`${file.name}: ${err.message}`); } }
+    if (allRec.length === 0 && containerRec.length === 0) {
         btn.disabled = false; btn.textContent = '上传并解析';
         showMessage('未解析到有效数据。' + errors.join('; '), 'error');
         document.getElementById('debugBtnArea').style.display = 'block';
         return;
     }
     try {
-        let cargoSaved = 0, containerSaved = 0, provinceSaved = 0;
+        let cargoSaved = 0, containerSaved = 0;
         if (allRec.length > 0) {
             cargoSaved = await saveCargoDataToCloud(allRec);
         }
         if (containerRec.length > 0) {
             containerSaved = await saveContainerDataToCloud(containerRec);
         }
-        if (provinceRec.length > 0) {
-            provinceSaved = await saveProvinceDataToCloud(provinceRec);
-        }
         await refreshDataFromCloud();
         refreshOverview();
         const cloudCount = await supabaseGetCategoryCount();
         const countInfo = cloudCount >= 0 ? `，云端共 ${cloudCount} 条` : '';
-        const parts = [];
-        if (cargoSaved > 0) parts.push(`货物吞吐量 ${cargoSaved} 条`);
-        if (containerSaved > 0) parts.push(`集装箱 ${containerSaved} 条`);
-        if (provinceSaved > 0) parts.push(`全省内河 ${provinceSaved} 条`);
-        if (parts.length > 0) {
-            showMessage(`✅ ${parts.join('，')}${countInfo}`, 'success');
+        if (allRec.length > 0) {
+            showMessage(`✅ 货物吞吐量 ${cargoSaved} 条，集装箱 ${containerSaved} 条${countInfo}`, 'success');
+        } else if (containerRec.length > 0) {
+            showMessage(`✅ 集装箱数据 ${containerSaved} 条${countInfo}`, 'success');
         }
         if (errors.length) showMessage(`部分问题: ${errors.join('; ')}`, 'warning');
     } catch(e) {
