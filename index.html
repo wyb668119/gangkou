@@ -904,41 +904,39 @@ function showDebugInfo() {
 function debugDBTotals() {
     const targetPeriod = '2025-01';
     const targetRegion = '全市';
-    const targetDirection = '总计';
-    const targetTradeType = '合计';
     
-    const filtered = allData.filter(r => 
-        r.period === targetPeriod && 
-        r.region === targetRegion && 
-        r.direction === targetDirection && 
-        r.tradeType === targetTradeType
+    const filtered = allData.filter(r =>
+        r.period === targetPeriod &&
+        r.region === targetRegion
     );
-    
-    const totalByCategory = {};
+
+    const byType = {};
     let grandTotal = 0;
     filtered.forEach(r => {
-        if (!totalByCategory[r.category]) totalByCategory[r.category] = 0;
-        totalByCategory[r.category] += r.value;
+        const key = `${r.direction}|${r.tradeType}`;
+        if (!byType[key]) byType[key] = 0;
+        byType[key] += r.value;
         grandTotal += r.value;
     });
-    
-    const catEntries = Object.entries(totalByCategory).sort((a, b) => b[1] - a[1]);
-    let html = `<h3>数据库中 2025-01 全市累计货物吞吐量明细</h3>`;
+
+    const totalWithCorrectFilter = allData
+        .filter(r => r.period === targetPeriod && r.region === targetRegion && r.direction === '总计' && r.tradeType === '合计')
+        .reduce((sum, r) => sum + (r.value || 0), 0);
+
+    let html = `<h3>数据库中 2025-01 全市货物吞吐量调试</h3>`;
     html += `<p style="color:red;font-weight:bold;">⚠️ 图表显示数值：1180.98万吨 = 11,809,800 吨</p>`;
-    html += `<p style="color:blue;font-weight:bold;">📊 Excel原始数据：11,778,600 吨 (差异: ${(grandTotal - 11778600).toLocaleString()} 吨)</p>`;
-    html += `<h4>各分类求和 (方向=总计, 贸易类型=合计):</h4>`;
-    html += `<table border="1" cellpadding="4" style="border-collapse:collapse;font-size:12px;"><tr><th>分类</th><th>吨</th><th>万吨</th></tr>`;
-    catEntries.forEach(([cat, val]) => {
-        html += `<tr><td>${cat}</td><td>${val.toLocaleString()}</td><td>${(val/10000).toFixed(2)}</td></tr>`;
+    html += `<p style="color:blue;font-weight:bold;">📊 正确值（方向=总计,贸易类型=合计）：${totalWithCorrectFilter.toLocaleString()} 吨 = ${(totalWithCorrectFilter/10000).toFixed(2)} 万吨</p>`;
+    html += `<p style="color:green;font-weight:bold;">📋 Excel原始数据：11,778,600 吨</p>`;
+    html += `<h4>所有记录按方向|贸易类型分组求和:</h4>`;
+    html += `<table border="1" cellpadding="4" style="border-collapse:collapse;font-size:12px;"><tr><th>方向|贸易类型</th><th>吨</th></tr>`;
+    Object.entries(byType).sort((a,b) => b[1]-a[1]).forEach(([key, val]) => {
+        html += `<tr><td>${key}</td><td>${val.toLocaleString()}</td></tr>`;
     });
-    html += `<tr style="font-weight:bold;background:#f0f0f0;"><td>合计</td><td>${grandTotal.toLocaleString()}</td><td>${(grandTotal/10000).toFixed(2)}</td></tr>`;
+    html += `<tr style="font-weight:bold;background:#f0f0f0;"><td>合计</td><td>${grandTotal.toLocaleString()}</td></tr>`;
     html += `</table>`;
     html += `<h4>原始记录数: ${filtered.length} 条</h4>`;
-    
-    const allForPeriod = allData.filter(r => r.period === targetPeriod && r.region === targetRegion);
-    html += `<h4>所有方向/贸易类型的记录数: ${allForPeriod.length} 条</h4>`;
-    
-    const w = window.open('', '_blank', 'width=800,height=600'); 
+
+    const w = window.open('', '_blank', 'width=700,height=500');
     w.document.write('<html><head><meta charset="UTF-8"><title>数据库调试</title></head><body style="font-family:monospace;padding:16px;">' + html + '</body></html>');
 }
 
