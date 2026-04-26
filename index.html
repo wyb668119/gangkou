@@ -752,6 +752,9 @@ async function loadProvinceDataFromCloud() {
         if (!resp.ok) throw new Error(`加载省港口数据失败: ${resp.status}`);
         const data = await resp.json();
         
+        // 所有城市列表
+        const allCities = ['杭州', '嘉兴内河', '湖州', '绍兴', '宁波', '金华', '衢州', '丽水'];
+        
         provincePortData = {};
         data.forEach(r => {
             const year = r.year;
@@ -771,15 +774,39 @@ async function loadProvinceDataFromCloud() {
         Object.keys(provincePortData).forEach(year => {
             const months = Object.keys(provincePortData[year].monthly).sort((a, b) => a - b);
             const cumulative = {};
+            
+            // 初始化所有城市的累计值为0
+            allCities.forEach(city => {
+                cumulative[city] = 0;
+            });
+            
             months.forEach(m => {
-                provincePortData[year].monthly[m].forEach(item => {
-                    if (!cumulative[item.city]) cumulative[item.city] = 0;
+                const monthData = provincePortData[year].monthly[m];
+                const monthDataMap = {};
+                
+                // 初始化本月数据为0
+                allCities.forEach(city => {
+                    monthDataMap[city] = 0;
+                });
+                
+                // 填充有数据的城市
+                monthData.forEach(item => {
+                    monthDataMap[item.city] = item.value;
                     cumulative[item.city] += item.value;
                 });
+                
+                // 重新构建本月数据，包含所有城市
+                provincePortData[year].monthly[m] = allCities.map(city => ({
+                    city: city,
+                    value: monthDataMap[city]
+                }));
             });
-            provincePortData[year].yearly = Object.entries(cumulative)
-                .map(([city, value]) => ({ city, value }))
-                .sort((a, b) => b.value - a.value);
+            
+            // 构建年度累计数据，包含所有城市
+            provincePortData[year].yearly = allCities.map(city => ({
+                city: city,
+                value: cumulative[city]
+            }));
         });
         
         return true;
@@ -843,10 +870,11 @@ async function parseProvinceExcelFile(file) {
             if (!cityMap[cityName]) continue;
             
             const throughputValue = row[2];
-            if (throughputValue === undefined || throughputValue === null || throughputValue === '') continue;
-            
-            const valueNum = parseFloat(String(throughputValue).replace(/,/g, ''));
-            if (isNaN(valueNum)) continue;
+            let valueNum = 0;
+            if (throughputValue !== undefined && throughputValue !== null && throughputValue !== '') {
+                valueNum = parseFloat(String(throughputValue).replace(/,/g, ''));
+                if (isNaN(valueNum)) valueNum = 0;
+            }
             
             records.push({
                 year: year,
@@ -2451,6 +2479,7 @@ function updateRankList() {
         data = provincePortData[year]?.monthly?.[month] || [];
     }
     
+    // 按吞吐量降序排序，确保所有城市都显示
     data.sort((a, b) => b.value - a.value);
     
     const rankList = document.getElementById('rankList');
