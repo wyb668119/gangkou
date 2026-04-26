@@ -104,7 +104,7 @@
         .chart-center-label .center-unit { font-size: 0.68rem; color: #7f8fa4; }
         @media (max-width: 768px) { .overview-grid { grid-template-columns: 1fr; } }
         
-        .trend-rank-section { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; margin-top: 14px; }
+        .trend-rank-section { display: grid; grid-template-columns: 2.2fr 1fr; gap: 16px; margin-top: 14px; margin-bottom: 20px; }
         @media (max-width: 1000px) { .trend-rank-section { grid-template-columns: 1fr; } }
         .trend-card { background: white; border-radius: 14px; padding: 16px 18px; border: 1px solid #e2edf7; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
         .trend-card .trend-title { font-size: 0.9rem; font-weight: 600; color: #1a3a4a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
@@ -2244,7 +2244,7 @@ function initTrendChart() {
             left: '8%',
             right: '5%',
             bottom: '15%',
-            top: '15%',
+            top: '18%',
             containLabel: false
         },
         xAxis: {
@@ -2291,6 +2291,16 @@ function initTrendChart() {
                         ]
                     },
                     borderRadius: [4, 4, 0, 0]
+                },
+                label: {
+                    show: true,
+                    position: 'top',
+                    formatter: function(params) {
+                        return (params.value / 10000).toFixed(2) + '亿';
+                    },
+                    fontSize: 9,
+                    color: '#4a627a',
+                    fontWeight: '500'
                 },
                 emphasis: {
                     itemStyle: { shadowBlur: 10, shadowColor: 'rgba(44,125,160,0.3)' }
