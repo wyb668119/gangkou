@@ -199,28 +199,18 @@
                 <div class="rank-title">全省内河港口吞吐量排行</div>
                 <div class="rank-controls">
                     <select id="rankYearSelect" onchange="updateRankList()">
-                        <option value="2025">2025年</option>
-                        <option value="2024">2024年</option>
-                        <option value="2023">2023年</option>
+                        <option value="">暂无数据</option>
                     </select>
                     <select id="rankTypeSelect" onchange="updateRankList()">
                         <option value="yearly">年度累计</option>
                         <option value="monthly">当月数据</option>
                     </select>
                     <select id="rankMonthSelect" onchange="updateRankList()" style="display:none;">
-                        <option value="1">1月</option>
-                        <option value="2">2月</option>
-                        <option value="3">3月</option>
-                        <option value="4">4月</option>
-                        <option value="5">5月</option>
-                        <option value="6">6月</option>
-                        <option value="7">7月</option>
-                        <option value="8">8月</option>
-                        <option value="9">9月</option>
-                        <option value="10">10月</option>
-                        <option value="11">11月</option>
-                        <option value="12">12月</option>
+                        <option value="">--请选择--</option>
                     </select>
+                    <input type="file" id="provinceFileInput" accept=".xls,.xlsx" style="display:none;" onchange="handleProvinceFileUpload(this)">
+                    <button class="btn btn-orange btn-sm" onclick="document.getElementById('provinceFileInput').click()">上传省数据</button>
+                    <button class="btn btn-red btn-sm" onclick="clearProvinceData()">清空</button>
                 </div>
                 <div class="rank-list" id="rankList"></div>
             </div>
@@ -326,6 +316,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const CATEGORY_TABLE = 'gangkou_category_data';
 const CONTAINER_TABLE = 'gangkou_container_data';
 const TEMPLATE_TABLE = 'gangkou_templates';
+const PROVINCE_TABLE = 'province_port_data';
 const MAX_TEMPLATES = 10;
 const KNOWN_REGIONS = ['全市', '吴兴区', '南浔区', '长兴县', '德清县', '安吉县', '南太湖新区'];
 const DIRECTIONS = ['总计', '出港', '进港'];
@@ -701,6 +692,174 @@ async function deleteTemplateFromCloud(id) {
     }
 }
 
+async function saveProvinceDataToCloud(records) {
+    if (!records || records.length === 0) return 0;
+    const rowMap = new Map();
+    records.forEach(r => {
+        const key = `${r.year}|${r.month}|${r.city}`;
+        rowMap.set(key, {
+            year: r.year,
+            month: r.month,
+            city: r.city,
+            throughput: r.throughput
+        });
+    });
+    const rows = Array.from(rowMap.values());
+    const batchSize = 50;
+    let savedCount = 0;
+    for (let i = 0; i < rows.length; i += batchSize) {
+        const batch = rows.slice(i, i + batchSize);
+        const url = `${SUPABASE_URL}/rest/v1/${PROVINCE_TABLE}?on_conflict=year,month,city`;
+        let retries = 3;
+        let lastError = null;
+        while (retries > 0) {
+            try {
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: sbHeaders({ 'Prefer': 'return=representation,resolution=merge-duplicates' }),
+                    body: JSON.stringify(batch)
+                });
+                if (!resp.ok) {
+                    const errBody = await resp.text();
+                    if ((resp.status === 429 || resp.status >= 500) && retries > 1) {
+                        retries--;
+                        await delay(1500);
+                        continue;
+                    }
+                    throw new Error(`写入省港口数据失败(${resp.status}): ${errBody}`);
+                }
+                const result = await resp.json();
+                savedCount += Array.isArray(result) ? result.length : batch.length;
+                break;
+            } catch (err) {
+                lastError = err;
+                if (retries <= 1) throw lastError;
+                retries--;
+                await delay(1500);
+            }
+        }
+        if (i + batchSize < rows.length) {
+            await delay(300);
+        }
+    }
+    return savedCount;
+}
+
+async function loadProvinceDataFromCloud() {
+    try {
+        const url = `${SUPABASE_URL}/rest/v1/${PROVINCE_TABLE}?select=*`;
+        const resp = await fetch(url, { headers: sbHeaders() });
+        if (!resp.ok) throw new Error(`加载省港口数据失败: ${resp.status}`);
+        const data = await resp.json();
+        
+        provincePortData = {};
+        data.forEach(r => {
+            const year = r.year;
+            const month = r.month;
+            if (!provincePortData[year]) {
+                provincePortData[year] = { yearly: [], monthly: {} };
+            }
+            if (!provincePortData[year].monthly[month]) {
+                provincePortData[year].monthly[month] = [];
+            }
+            provincePortData[year].monthly[month].push({
+                city: r.city,
+                value: r.throughput
+            });
+        });
+        
+        Object.keys(provincePortData).forEach(year => {
+            const months = Object.keys(provincePortData[year].monthly).sort((a, b) => a - b);
+            const cumulative = {};
+            months.forEach(m => {
+                provincePortData[year].monthly[m].forEach(item => {
+                    if (!cumulative[item.city]) cumulative[item.city] = 0;
+                    cumulative[item.city] += item.value;
+                });
+            });
+            provincePortData[year].yearly = Object.entries(cumulative)
+                .map(([city, value]) => ({ city, value }))
+                .sort((a, b) => b.value - a.value);
+        });
+        
+        return true;
+    } catch (e) {
+        console.error('加载省港口数据异常:', e);
+        return false;
+    }
+}
+
+async function clearProvinceCloudData() {
+    try {
+        const url = `${SUPABASE_URL}/rest/v1/${PROVINCE_TABLE}?id=not.is.null`;
+        const resp = await fetch(url, {
+            method: 'DELETE',
+            headers: sbHeaders()
+        });
+        if (!resp.ok) throw new Error(`清空省港口数据失败: ${resp.status}`);
+        provincePortData = {};
+        return true;
+    } catch (e) {
+        console.error('清空省港口数据异常:', e);
+        return false;
+    }
+}
+
+async function parseProvinceExcelFile(file) {
+    const data = await file.arrayBuffer();
+    const wb = XLSX.read(data, { type: 'array' });
+    const records = [];
+    
+    const cityMap = {
+        '杭州': '杭州',
+        '嘉兴内河': '嘉兴内河',
+        '湖州': '湖州',
+        '绍兴': '绍兴',
+        '宁波': '宁波',
+        '金华': '金华',
+        '衢州': '衢州',
+        '丽水': '丽水'
+    };
+    
+    for (const sn of wb.SheetNames) {
+        const sheet = wb.Sheets[sn];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+        
+        let period = detectPeriod(sn);
+        if (!period) {
+            period = detectPeriod(file.name);
+        }
+        if (!period) continue;
+        
+        const year = parseInt(period.split('-')[0]);
+        const month = parseInt(period.split('-')[1]);
+        
+        for (let rowIdx = 33; rowIdx <= 41; rowIdx++) {
+            if (rowIdx >= rows.length) continue;
+            const row = rows[rowIdx];
+            if (!row || row.length < 3) continue;
+            
+            const cityName = String(row[0] || '').trim();
+            if (!cityMap[cityName]) continue;
+            
+            const throughputValue = row[2];
+            if (throughputValue === undefined || throughputValue === null || throughputValue === '') continue;
+            
+            const valueNum = parseFloat(String(throughputValue).replace(/,/g, ''));
+            if (isNaN(valueNum)) continue;
+            
+            records.push({
+                year: year,
+                month: month,
+                city: cityName,
+                throughput: valueNum * 10000
+            });
+        }
+    }
+    
+    return records;
+}
+
 let detailInfoVisible = false;
 function toggleDetailInfo() {
     detailInfoVisible = !detailInfoVisible;
@@ -719,6 +878,45 @@ function showMessage(msg, type) { const d = document.getElementById('uploadMsg')
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
 function fmtNum(n) { if (n === null || n === undefined) return '-'; if (typeof n === 'string') return n; return Number.isInteger(n) ? n.toLocaleString('zh-CN') : n.toLocaleString('zh-CN', {maximumFractionDigits:2}); }
 function safeNum(v) { if (v === null || v === undefined || v === '' || v === '-') return null; if (typeof v === 'number') return isNaN(v) ? null : v; const s = String(v).replace(/[,，\s%％]/g, ''); const n = parseFloat(s); return isNaN(n) ? null : n; }
+
+async function handleProvinceFileUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    
+    try {
+        const records = await parseProvinceExcelFile(file);
+        if (records.length === 0) {
+            showMessage('未解析到有效的省港口数据，请检查Excel格式', 'error');
+            return;
+        }
+        
+        await saveProvinceDataToCloud(records);
+        await loadProvinceDataFromCloud();
+        updateRankList();
+        
+        const years = Object.keys(provincePortData);
+        const months = years.length > 0 ? Object.keys(provincePortData[years[0]].monthly || {}) : [];
+        showMessage(`✅ 成功解析 ${records.length} 条省港口数据（${years.join(', ')}年）`, 'success');
+    } catch (e) {
+        showMessage('上传省港口数据失败: ' + e.message, 'error');
+    }
+    
+    input.value = '';
+}
+
+async function clearProvinceData() {
+    const pw = prompt('请输入密码：');
+    if (pw !== '8119') { showMessage('密码错误', 'error'); return; }
+    if (!confirm('确定清空所有省港口数据？此操作不可恢复！')) return;
+    
+    try {
+        await clearProvinceCloudData();
+        updateRankList();
+        showMessage('✅ 已清空省港口数据', 'success');
+    } catch (e) {
+        showMessage('清空失败: ' + e.message, 'error');
+    }
+}
 
 function detectRegion(text) { if (!text) return null; text = String(text).trim(); if (/吴兴/.test(text)) return '吴兴区'; if (/南浔/.test(text)) return '南浔区'; if (/长兴/.test(text)) return '长兴县'; if (/德清/.test(text)) return '德清县'; if (/安吉/.test(text)) return '安吉县'; if (/南太湖|太湖新/.test(text)) return '南太湖新区'; if (/全市|湖州/.test(text)) return '全市'; return null; }
 function detectPeriod(text) { if (!text) return null; text = String(text).trim(); let m = text.match(/(\d{4})\s*[-\/年.．]\s*(\d{1,2})\s*月?/); if (m) return m[1] + '-' + m[2].padStart(2, '0'); m = text.match(/(\d{4})(\d{2})/); if (m && +m[2] >= 1 && +m[2] <= 12) return m[1] + '-' + m[2]; return null; }
@@ -1479,36 +1677,47 @@ function renderCategoryChartOnly(year, months) {
     const subText = months.length === 1 ? startLabel : `${startLabel} ~ ${endLabel}`;
     document.getElementById('categoryChartSub').textContent = subText;
 
+    // 直接获取总计类别的值（与同比分析图逻辑一致）
+    const totalValue = allData
+        .filter(r => months.includes(r.period) && r.region === '全市' && r.direction === '总计' && r.tradeType === '合计' && r.category === '总计')
+        .reduce((sum, r) => sum + (r.value || 0), 0);
+
+    // 获取所有非"其中"开头的类别（不包括"总计"）
     const mainCategories = allData
-        .filter(r => months.includes(r.period) && r.region === '全市' && r.direction === '总计' && r.tradeType === '合计' && !r.category.startsWith('其中'))
+        .filter(r => months.includes(r.period) && r.region === '全市' && r.direction === '总计' && r.tradeType === '合计' && !r.category.startsWith('其中') && r.category !== '总计')
         .map(r => r.category)
         .filter((v, i, a) => a.indexOf(v) === i);
+
+    // 按预设顺序排序
     const orderedCats = CATEGORY_ORDER.filter(c => mainCategories.includes(c) && c !== '总计');
     const remainingCats = mainCategories.filter(c => !CATEGORY_ORDER.includes(c) && c !== '总计').sort();
     const allCats = [...orderedCats, ...remainingCats];
 
+    // 计算各分类的值
     const catData = allCats.map(cat => {
         return allData
             .filter(r => months.includes(r.period) && r.region === '全市' && r.direction === '总计' && r.tradeType === '合计' && r.category === cat)
             .reduce((sum, r) => sum + (r.value || 0), 0);
     });
-    const catTotal = catData.reduce((s, v) => s + v, 0);
-    
-    const filteredCats = allCats.filter((_, i) => catData[i] > 0 && (catData[i] / catTotal * 100) >= 0.5);
-    const filteredCatData = catData.filter(v => v > 0 && (v / catTotal * 100) >= 0.5);
-    const filteredCatTotal = filteredCatData.reduce((s, v) => s + v, 0);
-    
+
+    // 过滤掉小于0.5%的类别
+    const filteredCats = allCats.filter((_, i) => catData[i] > 0 && (catData[i] / totalValue * 100) >= 0.5);
+    const filteredCatData = catData.filter(v => v > 0 && (v / totalValue * 100) >= 0.5);
+
+    // 生成标签
     const catLabels = filteredCats.map((label, i) => {
         const val = filteredCatData[i];
-        const pct = filteredCatTotal > 0 ? (val / filteredCatTotal * 100).toFixed(1) : '0.0';
+        const pct = totalValue > 0 ? (val / totalValue * 100).toFixed(1) : '0.0';
         return `${label}  ${pct}%  ${toWan(val)}万吨`;
     });
 
+    // 更新总计显示
     const totalDisplay = document.getElementById('categoryTotalDisplay');
     if (totalDisplay) {
-        totalDisplay.textContent = `全市累计吞吐量：${toWan(catTotal)}万吨`;
+        totalDisplay.textContent = `全市累计吞吐量：${toWan(totalValue)}万吨`;
     }
 
+    // 渲染图表
     if (categoryChartInst) categoryChartInst.destroy();
     categoryChartInst = new Chart(document.getElementById('categoryChart'), {
         type: 'doughnut',
@@ -1548,7 +1757,7 @@ function renderCategoryChartOnly(year, months) {
                     callbacks: {
                         label: function(ctx) {
                             const val = ctx.parsed;
-                            const pct = filteredCatTotal > 0 ? (val / filteredCatTotal * 100).toFixed(1) : 0;
+                            const pct = totalValue > 0 ? (val / totalValue * 100).toFixed(1) : 0;
                             return ` ${toWan(val)}万吨 (${pct}%)`;
                         }
                     }
@@ -2055,7 +2264,7 @@ document.getElementById('modeSelect').addEventListener('change', function() { do
     }
 })();
 
-const provincePortData = {
+let provincePortData = {
     2025: {
         yearly: [
             { city: '杭州', value: 16850 },
@@ -2221,12 +2430,15 @@ const provincePortData = {
 };
 
 function updateRankList() {
+    updateRankYearSelect();
+    
     const year = document.getElementById('rankYearSelect').value;
     const type = document.getElementById('rankTypeSelect').value;
     const monthSelect = document.getElementById('rankMonthSelect');
     
     if (type === 'monthly') {
         monthSelect.style.display = 'inline-block';
+        updateRankMonthSelect(year);
     } else {
         monthSelect.style.display = 'none';
     }
@@ -2242,6 +2454,10 @@ function updateRankList() {
     data.sort((a, b) => b.value - a.value);
     
     const rankList = document.getElementById('rankList');
+    if (data.length === 0) {
+        rankList.innerHTML = '<div style="text-align:center;color:#8ba0b5;padding:30px;font-size:0.85rem;">暂无数据<br>请上传省港口数据</div>';
+        return;
+    }
     rankList.innerHTML = data.map((item, index) => {
         const rank = index + 1;
         let itemClass = 'rank-item';
@@ -2255,6 +2471,26 @@ function updateRankList() {
             <div class="rank-unit">亿吨</div>
         </div>`;
     }).join('');
+}
+
+function updateRankYearSelect() {
+    const select = document.getElementById('rankYearSelect');
+    const years = Object.keys(provincePortData).sort((a, b) => b - a);
+    if (years.length === 0) {
+        select.innerHTML = '<option value="">暂无数据</option>';
+        return;
+    }
+    select.innerHTML = years.map(y => `<option value="${y}">${y}年</option>`).join('');
+}
+
+function updateRankMonthSelect(year) {
+    const select = document.getElementById('rankMonthSelect');
+    if (!year || !provincePortData[year]) {
+        select.innerHTML = '<option value="">暂无数据</option>';
+        return;
+    }
+    const months = Object.keys(provincePortData[year].monthly || {}).sort((a, b) => a - b);
+    select.innerHTML = months.map(m => `<option value="${m}">${m}月</option>`).join('');
 }
 
 function initTrendChart() {
@@ -2401,8 +2637,9 @@ function initTrendChart() {
     });
 }
 
-setTimeout(function() {
+setTimeout(async function() {
     initTrendChart();
+    await loadProvinceDataFromCloud();
     updateRankList();
 }, 100);
 </script>
