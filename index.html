@@ -164,8 +164,9 @@
             </div>
             <div class="help-text">💡 支持上传行业统计平台生成的港口分类货物吞吐量表。列有两层表头：第一层（总计/出港/进港），第二层（合计/外贸/内贸）。地区和月份自动识别。数据通过 Supabase 云端实时同步，所有用户共享同一数据库。</div>
             <div id="uploadMsg" class="msg-area"></div>
-            <div id="debugBtnArea" style="display:none;margin-top:10px;">
+            <div id="debugBtnArea" style="margin-top:10px;">
                 <button class="btn btn-orange btn-sm" onclick="showDebugInfo()">🔍 查看Excel原始数据</button>
+                <button class="btn btn-orange btn-sm" onclick="debugDBTotals()">🔍 查看数据库2025-01汇总</button>
             </div>
         </div>
 
@@ -898,6 +899,47 @@ function showDebugInfo() {
         html += '</table>';
     }
     const w = window.open('', '_blank', 'width=1100,height=700'); w.document.write('<html><body style="font-family:monospace;padding:16px;">' + html + '</body></html>');
+}
+
+function debugDBTotals() {
+    const targetPeriod = '2025-01';
+    const targetRegion = '全市';
+    const targetDirection = '总计';
+    const targetTradeType = '合计';
+    
+    const filtered = allData.filter(r => 
+        r.period === targetPeriod && 
+        r.region === targetRegion && 
+        r.direction === targetDirection && 
+        r.tradeType === targetTradeType
+    );
+    
+    const totalByCategory = {};
+    let grandTotal = 0;
+    filtered.forEach(r => {
+        if (!totalByCategory[r.category]) totalByCategory[r.category] = 0;
+        totalByCategory[r.category] += r.value;
+        grandTotal += r.value;
+    });
+    
+    const catEntries = Object.entries(totalByCategory).sort((a, b) => b[1] - a[1]);
+    let html = `<h3>数据库中 2025-01 全市累计货物吞吐量明细</h3>`;
+    html += `<p style="color:red;font-weight:bold;">⚠️ 图表显示数值：1180.98万吨 = 11,809,800 吨</p>`;
+    html += `<p style="color:blue;font-weight:bold;">📊 Excel原始数据：11,778,600 吨 (差异: ${(grandTotal - 11778600).toLocaleString()} 吨)</p>`;
+    html += `<h4>各分类求和 (方向=总计, 贸易类型=合计):</h4>`;
+    html += `<table border="1" cellpadding="4" style="border-collapse:collapse;font-size:12px;"><tr><th>分类</th><th>吨</th><th>万吨</th></tr>`;
+    catEntries.forEach(([cat, val]) => {
+        html += `<tr><td>${cat}</td><td>${val.toLocaleString()}</td><td>${(val/10000).toFixed(2)}</td></tr>`;
+    });
+    html += `<tr style="font-weight:bold;background:#f0f0f0;"><td>合计</td><td>${grandTotal.toLocaleString()}</td><td>${(grandTotal/10000).toFixed(2)}</td></tr>`;
+    html += `</table>`;
+    html += `<h4>原始记录数: ${filtered.length} 条</h4>`;
+    
+    const allForPeriod = allData.filter(r => r.period === targetPeriod && r.region === targetRegion);
+    html += `<h4>所有方向/贸易类型的记录数: ${allForPeriod.length} 条</h4>`;
+    
+    const w = window.open('', '_blank', 'width=800,height=600'); 
+    w.document.write('<html><head><meta charset="UTF-8"><title>数据库调试</title></head><body style="font-family:monospace;padding:16px;">' + html + '</body></html>');
 }
 
 function getUnique(field) { return [...new Set(allData.map(r => r[field]).filter(Boolean))].sort(); }
