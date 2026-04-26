@@ -835,6 +835,7 @@ async function parseProvinceExcelFile(file) {
     
     const cityMap = {
         '杭州': '杭州',
+        '嘉兴': '嘉兴内河',
         '嘉兴内河': '嘉兴内河',
         '湖州': '湖州',
         '绍兴': '绍兴',
@@ -842,6 +843,21 @@ async function parseProvinceExcelFile(file) {
         '金华': '金华',
         '衢州': '衢州',
         '丽水': '丽水'
+    };
+    
+    // 城市名称映射表，用于处理不同的写法
+    const cityAliases = {
+        '杭州市': '杭州',
+        '嘉兴市': '嘉兴',
+        '湖州市': '湖州',
+        '绍兴市': '绍兴',
+        '宁波市': '宁波',
+        '金华市': '金华',
+        '衢州市': '衢州',
+        '丽水市': '丽水',
+        '嘉兴港': '嘉兴内河',
+        '湖州港': '湖州',
+        '杭州港': '杭州'
     };
     
     for (const sn of wb.SheetNames) {
@@ -881,7 +897,15 @@ async function parseProvinceExcelFile(file) {
             const cityName = String(row[0] || '').trim();
             const cityNameDebug = cityName.split('').map(c => c.charCodeAt(0).toString(16)).join(' ');
             console.log('Row ' + rowIdx + ' (Excel ' + (rowIdx+1) + '): cityName="' + cityName + '" (hex: ' + cityNameDebug + '), value=' + row[2]);
-            if (!cityMap[cityName]) {
+            
+            // 处理城市名称别名
+            let normalizedCity = cityName;
+            if (cityAliases[cityName]) {
+                normalizedCity = cityAliases[cityName];
+                console.log('  -> Using alias: ' + cityName + ' -> ' + normalizedCity);
+            }
+            
+            if (!cityMap[normalizedCity]) {
                 console.log('  -> City not in cityMap, skipping');
                 continue;
             }
@@ -896,7 +920,7 @@ async function parseProvinceExcelFile(file) {
             records.push({
                 year: year,
                 month: month,
-                city: cityName,
+                city: normalizedCity,
                 throughput: valueNum * 10000
             });
         }
