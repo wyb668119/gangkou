@@ -164,10 +164,6 @@
             </div>
             <div class="help-text">💡 支持上传行业统计平台生成的港口分类货物吞吐量表。列有两层表头：第一层（总计/出港/进港），第二层（合计/外贸/内贸）。地区和月份自动识别。数据通过 Supabase 云端实时同步，所有用户共享同一数据库。</div>
             <div id="uploadMsg" class="msg-area"></div>
-            <div id="debugBtnArea" style="margin-top:10px;">
-                <button class="btn btn-orange btn-sm" onclick="showDebugInfo()">🔍 查看Excel原始数据</button>
-                <button class="btn btn-orange btn-sm" onclick="debugDBTotals()">🔍 查看数据库2025-01汇总</button>
-            </div>
         </div>
 
         <div class="card">
@@ -852,11 +848,27 @@ async function parseProvinceExcelFile(file) {
         const sheet = wb.Sheets[sn];
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
         
+        console.log('Processing sheet:', sn);
+        console.log('  Total rows in sheet:', rows.length);
+        console.log('  First 5 rows sample (cols 0-4):');
+        for(let r = 0; r < Math.min(5, rows.length); r++) {
+            const sample = [];
+            for(let c = 0; c < Math.min(5, (rows[r] || []).length); c++) {
+                sample.push('"' + rows[r][c] + '"');
+            }
+            console.log('    Row ' + r + ': [' + sample.join(', ') + ']');
+        }
+        
         let period = detectPeriod(sn);
+        console.log('  Detected period from sheet name:', period);
         if (!period) {
             period = detectPeriod(file.name);
+            console.log('  Detected period from file name:', period);
         }
-        if (!period) continue;
+        if (!period) {
+            console.log('  -> Cannot detect period, skipping sheet');
+            continue;
+        }
         
         const year = parseInt(period.split('-')[0]);
         const month = parseInt(period.split('-')[1]);
@@ -867,7 +879,12 @@ async function parseProvinceExcelFile(file) {
             if (!row || row.length < 3) continue;
             
             const cityName = String(row[0] || '').trim();
-            if (!cityMap[cityName]) continue;
+            const cityNameDebug = cityName.split('').map(c => c.charCodeAt(0).toString(16)).join(' ');
+            console.log('Row ' + rowIdx + ' (Excel ' + (rowIdx+1) + '): cityName="' + cityName + '" (hex: ' + cityNameDebug + '), value=' + row[2]);
+            if (!cityMap[cityName]) {
+                console.log('  -> City not in cityMap, skipping');
+                continue;
+            }
             
             const throughputValue = row[2];
             let valueNum = 0;
