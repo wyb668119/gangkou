@@ -104,7 +104,7 @@
         .chart-center-label .center-unit { font-size: 0.68rem; color: #7f8fa4; }
         @media (max-width: 768px) { .overview-grid { grid-template-columns: 1fr; } }
         
-        .trend-rank-section { display: grid; grid-template-columns: 2.2fr 1fr; gap: 16px; margin-top: 14px; margin-bottom: 20px; }
+        .trend-rank-section { display: grid; grid-template-columns: 3fr 1fr; gap: 16px; margin-top: 14px; margin-bottom: 20px; }
         @media (max-width: 1000px) { .trend-rank-section { grid-template-columns: 1fr; } }
         .trend-card { background: white; border-radius: 14px; padding: 16px 18px; border: 1px solid #e2edf7; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
         .trend-card .trend-title { font-size: 0.9rem; font-weight: 600; color: #1a3a4a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
@@ -166,7 +166,7 @@
                 <input type="file" id="importBackup" accept=".json" style="display:none;">
                 <button class="btn btn-sm" onclick="document.getElementById('importBackup').click()">导入备份</button>
             </div>
-            <div class="help-text">💡 支持上传行业统计平台生成的港口分类货物吞吐量表。列有两层表头：第一层（总计/出港/进港），第二层（合计/外贸/内贸）。地区和月份自动识别。数据通过 Supabase 云端实时同步，所有用户共享同一数据库。</div>
+            <div class="help-text">💡 支持上传行业统计平台生成的港口分类货物吞吐量表。地区和月份自动识别。数据通过 Supabase 云端实时同步，所有用户共享同一数据库。</div>
             <div id="uploadMsg" class="msg-area"></div>
         </div>
 
