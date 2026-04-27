@@ -115,20 +115,24 @@
         .rank-card { background: white; border-radius: 14px; padding: 16px 18px; border: 1px solid #e2edf7; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
         .rank-card .rank-title { font-size: 0.9rem; font-weight: 600; color: #1a3a4a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
         .rank-card .rank-title::before { content: ""; width: 4px; height: 18px; background: linear-gradient(180deg, #e8913e 0%, #c97b1a 100%); border-radius: 2px; }
-        .rank-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .rank-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center; }
         .rank-controls select { padding: 5px 12px; border-radius: 20px; border: 1px solid #cbdbe0; font-size: 0.78rem; background: white; cursor: pointer; }
         .rank-controls select:focus { outline: none; border-color: #2c7da0; }
-        .rank-list { max-height: 260px; overflow-y: auto; }
-        .rank-item { display: flex; align-items: center; padding: 8px 10px; border-radius: 8px; margin-bottom: 6px; background: #f8fafd; transition: all 0.2s; }
-        .rank-item:hover { background: #eef2f7; }
-        .rank-item.top3 { background: linear-gradient(135deg, #fff8e6 0%, #fff3d6 100%); border: 1px solid #f0d78a; }
-        .rank-item.huzhou { background: linear-gradient(135deg, #e3f2fd 0%, #d4e8f7 100%); border: 1px solid #7fb3c8; }
-        .rank-num { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; margin-right: 10px; background: #e6edf4; color: #4a627a; }
-        .rank-item.top3 .rank-num { background: linear-gradient(135deg, #f5a623 0%, #e8913e 100%); color: white; }
+        .rank-actions { display: flex; gap: 12px; margin-left: auto; }
+        .btn-link { background: none; border: none; color: #2c7da0; font-size: 0.78rem; cursor: pointer; text-decoration: underline; padding: 0; }
+        .btn-link:hover { color: #1a5f7a; }
+        .rank-list { max-height: 280px; overflow-y: auto; }
+        .rank-item { display: flex; align-items: center; padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; background: #f8fafd; transition: all 0.2s; border: 1px solid transparent; }
+        .rank-item:hover { background: #eef2f7; transform: translateX(2px); }
+        .rank-item.top3 { background: linear-gradient(135deg, #fffbf0 0%, #fff8e8 100%); border: 1px solid #f5deb3; box-shadow: 0 2px 8px rgba(245,166,35,0.15); }
+        .rank-item.huzhou { background: linear-gradient(135deg, #e8f4fc 0%, #d6edf7 100%); border: 1px solid #a8d4e6; }
+        .rank-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 700; margin-right: 12px; background: #e6edf4; color: #4a627a; }
+        .rank-item.top3 .rank-num { background: linear-gradient(135deg, #f5a623 0%, #e8913e 100%); color: white; box-shadow: 0 2px 6px rgba(245,166,35,0.4); }
         .rank-item.huzhou .rank-num { background: linear-gradient(135deg, #2c7da0 0%, #1a5f7a 100%); color: white; }
-        .rank-city { flex: 1; font-size: 0.82rem; color: #1a3a4a; font-weight: 500; }
-        .rank-value { font-size: 0.82rem; font-weight: 600; color: #2c7da0; }
-        .rank-unit { font-size: 0.7rem; color: #7f8fa4; margin-left: 4px; }
+        .rank-city { flex: 1; font-size: 0.85rem; color: #1a3a4a; font-weight: 500; }
+        .rank-value { font-size: 1rem; font-weight: 700; color: #1a3a4a; margin-right: 4px; }
+        .rank-item.top3 .rank-value { color: #e8913e; }
+        .rank-unit { font-size: 0.72rem; color: #8ba0b5; }
     </style>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
@@ -194,19 +198,18 @@
             <div class="rank-card">
                 <div class="rank-title">全省内河港口吞吐量排行</div>
                 <div class="rank-controls">
-                    <select id="rankYearSelect" onchange="updateRankList()">
+                    <select id="rankPeriodStart" onchange="updateRankList()">
                         <option value="">暂无数据</option>
                     </select>
-                    <select id="rankTypeSelect" onchange="updateRankList()">
-                        <option value="yearly">年度累计</option>
-                        <option value="monthly">当月数据</option>
+                    <span style="font-size:0.75rem;margin:0 4px;color:#5a7a8a;">至</span>
+                    <select id="rankPeriodEnd" onchange="updateRankList()">
+                        <option value="">暂无数据</option>
                     </select>
-                    <select id="rankMonthSelect" onchange="updateRankList()" style="display:none;">
-                        <option value="">--请选择--</option>
-                    </select>
-                    <input type="file" id="provinceFileInput" accept=".xls,.xlsx" style="display:none;" onchange="handleProvinceFileUpload(this)">
-                    <button class="btn btn-orange btn-sm" onclick="document.getElementById('provinceFileInput').click()">上传省数据</button>
-                    <button class="btn btn-red btn-sm" onclick="clearProvinceData()">清空</button>
+                    <div class="rank-actions">
+                        <input type="file" id="provinceFileInput" accept=".xls,.xlsx" style="display:none;" onchange="handleProvinceFileUpload(this)">
+                        <button class="btn-link" onclick="document.getElementById('provinceFileInput').click()">上传</button>
+                        <button class="btn-link" onclick="clearProvinceData()">清空</button>
+                    </div>
                 </div>
                 <div class="rank-list" id="rankList"></div>
             </div>
@@ -2505,35 +2508,28 @@ let provincePortData = {
 };
 
 function updateRankList() {
-    updateRankYearSelect();
+    updateRankPeriodSelects();
     
-    const year = document.getElementById('rankYearSelect').value;
-    const type = document.getElementById('rankTypeSelect').value;
-    const monthSelect = document.getElementById('rankMonthSelect');
+    const startPeriod = document.getElementById('rankPeriodStart').value;
+    const endPeriod = document.getElementById('rankPeriodEnd').value;
     
-    if (type === 'monthly') {
-        monthSelect.style.display = 'inline-block';
-        updateRankMonthSelect(year);
-    } else {
-        monthSelect.style.display = 'none';
-    }
-    
-    let data = [];
-    if (type === 'yearly') {
-        data = provincePortData[year]?.yearly || [];
-    } else {
-        const month = monthSelect.value;
-        data = provincePortData[year]?.monthly?.[month] || [];
-    }
-    
-    // 按吞吐量降序排序，确保所有城市都显示
-    data.sort((a, b) => b.value - a.value);
-    
-    const rankList = document.getElementById('rankList');
-    if (data.length === 0) {
+    if (!startPeriod || !endPeriod) {
+        const rankList = document.getElementById('rankList');
         rankList.innerHTML = '<div style="text-align:center;color:#8ba0b5;padding:30px;font-size:0.85rem;">暂无数据<br>请上传省港口数据</div>';
         return;
     }
+    
+    const data = calculateCumulativeData(startPeriod, endPeriod);
+    
+    if (data.length === 0) {
+        const rankList = document.getElementById('rankList');
+        rankList.innerHTML = '<div style="text-align:center;color:#8ba0b5;padding:30px;font-size:0.85rem;">暂无数据<br>请上传省港口数据</div>';
+        return;
+    }
+    
+    data.sort((a, b) => b.value - a.value);
+    
+    const rankList = document.getElementById('rankList');
     rankList.innerHTML = data.map((item, index) => {
         const rank = index + 1;
         let itemClass = 'rank-item';
@@ -2549,24 +2545,72 @@ function updateRankList() {
     }).join('');
 }
 
-function updateRankYearSelect() {
-    const select = document.getElementById('rankYearSelect');
-    const years = Object.keys(provincePortData).sort((a, b) => b - a);
-    if (years.length === 0) {
-        select.innerHTML = '<option value="">暂无数据</option>';
+function updateRankPeriodSelects() {
+    const startSelect = document.getElementById('rankPeriodStart');
+    const endSelect = document.getElementById('rankPeriodEnd');
+    
+    const allPeriods = getAllAvailablePeriods();
+    
+    if (allPeriods.length === 0) {
+        startSelect.innerHTML = '<option value="">暂无数据</option>';
+        endSelect.innerHTML = '<option value="">暂无数据</option>';
         return;
     }
-    select.innerHTML = years.map(y => `<option value="${y}">${y}年</option>`).join('');
+    
+    allPeriods.sort((a, b) => a.localeCompare(b, 'zh-CN', { numeric: true }));
+    
+    const optionsHtml = allPeriods.map(p => {
+        const [year, month] = p.split('-');
+        return `<option value="${p}">${year}年${parseInt(month)}月</option>`;
+    }).join('');
+    
+    startSelect.innerHTML = optionsHtml;
+    endSelect.innerHTML = optionsHtml;
+    
+    if (allPeriods.length > 0) {
+        startSelect.value = allPeriods[0];
+        endSelect.value = allPeriods[allPeriods.length - 1];
+    }
 }
 
-function updateRankMonthSelect(year) {
-    const select = document.getElementById('rankMonthSelect');
-    if (!year || !provincePortData[year]) {
-        select.innerHTML = '<option value="">暂无数据</option>';
-        return;
+function getAllAvailablePeriods() {
+    const periods = new Set();
+    Object.keys(provincePortData).forEach(year => {
+        Object.keys(provincePortData[year].monthly || {}).forEach(month => {
+            periods.add(`${year}-${String(month).padStart(2, '0')}`);
+        });
+    });
+    return Array.from(periods);
+}
+
+function calculateCumulativeData(startPeriod, endPeriod) {
+    const allCities = ['杭州', '嘉兴内河', '湖州', '绍兴', '宁波内河', '金华', '衢州', '丽水'];
+    const result = {};
+    
+    allCities.forEach(city => {
+        result[city] = 0;
+    });
+    
+    const [startYear, startMonth] = startPeriod.split('-').map(Number);
+    const [endYear, endMonth] = endPeriod.split('-').map(Number);
+    
+    for (let year = startYear; year <= endYear; year++) {
+        if (!provincePortData[year]) continue;
+        
+        const monthStart = year === startYear ? startMonth : 1;
+        const monthEnd = year === endYear ? endMonth : 12;
+        
+        for (let month = monthStart; month <= monthEnd; month++) {
+            const monthData = provincePortData[year].monthly?.[month] || [];
+            monthData.forEach(item => {
+                if (result.hasOwnProperty(item.city)) {
+                    result[item.city] += item.value;
+                }
+            });
+        }
     }
-    const months = Object.keys(provincePortData[year].monthly || {}).sort((a, b) => a - b);
-    select.innerHTML = months.map(m => `<option value="${m}">${m}月</option>`).join('');
+    
+    return Object.entries(result).map(([city, value]) => ({ city, value }));
 }
 
 function initTrendChart() {
