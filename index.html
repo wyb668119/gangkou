@@ -118,10 +118,14 @@
         .rank-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center; }
         .rank-controls select { padding: 5px 12px; border-radius: 20px; border: 1px solid #cbdbe0; font-size: 0.78rem; background: white; cursor: pointer; }
         .rank-controls select:focus { outline: none; border-color: #2c7da0; }
-        .rank-actions { display: flex; gap: 8px; margin-left: auto; }
-        .btn-link { background: #f0f4f8; border: 1px solid #d0dae0; color: #4a627a; font-size: 0.72rem; cursor: pointer; padding: 3px 10px; border-radius: 12px; transition: all 0.2s; }
-        .btn-link:hover { background: #e2e8f0; color: #2c7da0; border-color: #2c7da0; }
+        .rank-actions { display: flex; gap: 6px; margin-left: auto; }
+        .btn-link { background: linear-gradient(135deg, #e8f4fc 0%, #d6edf7 100%); border: 1px solid #a8d4e6; color: #2c7da0; font-size: 0.72rem; cursor: pointer; padding: 4px 12px; border-radius: 14px; transition: all 0.2s; font-weight: 500; }
+        .btn-link:hover { background: linear-gradient(135deg, #2c7da0 0%, #1a5f7a 100%); color: white; border-color: #2c7da0; box-shadow: 0 2px 8px rgba(44,125,160,0.3); }
         .rank-list { max-height: 280px; overflow-y: auto; }
+        .rank-list::-webkit-scrollbar { width: 5px; }
+        .rank-list::-webkit-scrollbar-track { background: #f0f4f8; border-radius: 3px; }
+        .rank-list::-webkit-scrollbar-thumb { background: #a8d4e6; border-radius: 3px; }
+        .rank-list::-webkit-scrollbar-thumb:hover { background: #7bb8d4; }
         .rank-item { display: flex; align-items: center; padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; background: #f8fafd; transition: all 0.2s; border: 1px solid transparent; }
         .rank-item:hover { background: #eef2f7; transform: translateX(2px); }
         .rank-item.top3 { background: linear-gradient(135deg, #fffbf0 0%, #fff8e8 100%); border: 1px solid #f5deb3; box-shadow: 0 2px 8px rgba(245,166,35,0.15); }
