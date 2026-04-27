@@ -2356,7 +2356,7 @@ function updateRankList() {
         return `<div class="${itemClass}">
             <div class="rank-num">${rank}</div>
             <div class="rank-city">${item.city}</div>
-            <div class="rank-value">${item.value.toFixed(2)}</div>
+            <div class="rank-value">${(item.value / 10000).toFixed(2)}</div>
             <div class="rank-unit">万吨</div>
         </div>`;
     }).join('');
