@@ -196,7 +196,13 @@
                 <div class="trend-footer">数据来源：湖州港历年港口统计公报 | 单位：亿吨 | 时间跨度：2011年 — 2025年</div>
             </div>
             <div class="rank-card">
-                <div class="rank-title">全省内河港口吞吐量排行</div>
+                <div class="rank-title">全省内河港口吞吐量排行
+                    <div class="rank-actions" style="margin-left:auto;">
+                        <input type="file" id="provinceFileInput" accept=".xls,.xlsx" style="display:none;" onchange="handleProvinceFileUpload(this)">
+                        <button class="btn-link" onclick="document.getElementById('provinceFileInput').click()">上传</button>
+                        <button class="btn-link" onclick="clearProvinceData()">清空</button>
+                    </div>
+                </div>
                 <div class="rank-controls">
                     <select id="rankPeriodStart" onchange="updateRankList()">
                         <option value="">暂无数据</option>
@@ -205,11 +211,6 @@
                     <select id="rankPeriodEnd" onchange="updateRankList()">
                         <option value="">暂无数据</option>
                     </select>
-                    <div class="rank-actions">
-                        <input type="file" id="provinceFileInput" accept=".xls,.xlsx" style="display:none;" onchange="handleProvinceFileUpload(this)">
-                        <button class="btn-link" onclick="document.getElementById('provinceFileInput').click()">上传</button>
-                        <button class="btn-link" onclick="clearProvinceData()">清空</button>
-                    </div>
                 </div>
                 <div class="rank-list" id="rankList"></div>
             </div>
