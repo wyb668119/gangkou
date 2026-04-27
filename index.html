@@ -118,9 +118,9 @@
         .rank-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center; }
         .rank-controls select { padding: 5px 12px; border-radius: 20px; border: 1px solid #cbdbe0; font-size: 0.78rem; background: white; cursor: pointer; }
         .rank-controls select:focus { outline: none; border-color: #2c7da0; }
-        .rank-actions { display: flex; gap: 12px; margin-left: auto; }
-        .btn-link { background: none; border: none; color: #2c7da0; font-size: 0.78rem; cursor: pointer; text-decoration: underline; padding: 0; }
-        .btn-link:hover { color: #1a5f7a; }
+        .rank-actions { display: flex; gap: 8px; margin-left: auto; }
+        .btn-link { background: #f0f4f8; border: 1px solid #d0dae0; color: #4a627a; font-size: 0.72rem; cursor: pointer; padding: 3px 10px; border-radius: 12px; transition: all 0.2s; }
+        .btn-link:hover { background: #e2e8f0; color: #2c7da0; border-color: #2c7da0; }
         .rank-list { max-height: 280px; overflow-y: auto; }
         .rank-item { display: flex; align-items: center; padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; background: #f8fafd; transition: all 0.2s; border: 1px solid transparent; }
         .rank-item:hover { background: #eef2f7; transform: translateX(2px); }
@@ -130,7 +130,7 @@
         .rank-item.top3 .rank-num { background: linear-gradient(135deg, #f5a623 0%, #e8913e 100%); color: white; box-shadow: 0 2px 6px rgba(245,166,35,0.4); }
         .rank-item.huzhou .rank-num { background: linear-gradient(135deg, #2c7da0 0%, #1a5f7a 100%); color: white; }
         .rank-city { flex: 1; font-size: 0.85rem; color: #1a3a4a; font-weight: 500; }
-        .rank-value { font-size: 1rem; font-weight: 700; color: #1a3a4a; margin-right: 4px; }
+        .rank-value { font-size: 0.88rem; font-weight: 600; color: #1a3a4a; margin-right: 4px; }
         .rank-item.top3 .rank-value { color: #e8913e; }
         .rank-unit { font-size: 0.72rem; color: #8ba0b5; }
     </style>
@@ -871,27 +871,11 @@ async function parseProvinceExcelFile(file) {
         const sheet = wb.Sheets[sn];
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
         
-        console.log('Processing sheet:', sn);
-        console.log('  Total rows in sheet:', rows.length);
-        
-        // 输出第33-42行的A列和C列数据（0索引）
-        console.log('  Rows 33-42 (Excel 34-43), columns A and C:');
-        for(let r = 33; r <= 42 && r < rows.length; r++) {
-            const colA = rows[r] && rows[r][0] !== undefined ? String(rows[r][0]).trim() : '(empty)';
-            const colC = rows[r] && rows[r][2] !== undefined ? String(rows[r][2]).trim() : '(empty)';
-            console.log('    Row ' + r + ' (Excel ' + (r+1) + '): A="' + colA + '", C="' + colC + '"');
-        }
-        
         let period = detectPeriod(sn);
-        console.log('  Detected period from sheet name:', period);
         if (!period) {
             period = detectPeriod(file.name);
-            console.log('  Detected period from file name:', period);
         }
-        if (!period) {
-            console.log('  -> Cannot detect period, skipping sheet');
-            continue;
-        }
+        if (!period) continue;
         
         const year = parseInt(period.split('-')[0]);
         const month = parseInt(period.split('-')[1]);
@@ -902,16 +886,12 @@ async function parseProvinceExcelFile(file) {
             if (!row || row.length < 3) continue;
             
             const cityName = String(row[0] || '').trim();
-            const cityNameDebug = cityName.split('').map(c => c.charCodeAt(0).toString(16)).join(' ');
-            console.log('Row ' + rowIdx + ' (Excel ' + (rowIdx+1) + '): cityName="' + cityName + '" (hex: ' + cityNameDebug + '), value=' + row[2]);
             
             // 处理城市名称别名
             let normalizedCity = normalizeCityName(cityName);
-            console.log('  -> Normalized cityName: "' + cityName + '" -> "' + normalizedCity + '"');
             
             if (cityAliases[normalizedCity]) {
                 normalizedCity = cityAliases[normalizedCity];
-                console.log('  -> Using alias: ' + normalizedCity);
             }
             
             if (!cityMap[normalizedCity]) {
@@ -2342,170 +2322,7 @@ document.getElementById('modeSelect').addEventListener('change', function() { do
     }
 })();
 
-let provincePortData = {
-    2025: {
-        yearly: [
-            { city: '杭州', value: 16850 },
-            { city: '嘉兴', value: 14200 },
-            { city: '湖州', value: 15002 },
-            { city: '绍兴', value: 8900 },
-            { city: '宁波', value: 6500 },
-            { city: '金华', value: 4200 },
-            { city: '衢州', value: 3100 },
-            { city: '丽水', value: 1800 }
-        ],
-        monthly: {
-            1: [
-                { city: '杭州', value: 1420 },
-                { city: '嘉兴', value: 1180 },
-                { city: '湖州', value: 1250 },
-                { city: '绍兴', value: 750 },
-                { city: '宁波', value: 520 },
-                { city: '金华', value: 350 },
-                { city: '衢州', value: 260 },
-                { city: '丽水', value: 150 }
-            ],
-            2: [
-                { city: '杭州', value: 1280 },
-                { city: '嘉兴', value: 1050 },
-                { city: '湖州', value: 1120 },
-                { city: '绍兴', value: 680 },
-                { city: '宁波', value: 480 },
-                { city: '金华', value: 320 },
-                { city: '衢州', value: 240 },
-                { city: '丽水', value: 140 }
-            ],
-            3: [
-                { city: '杭州', value: 1450 },
-                { city: '嘉兴', value: 1200 },
-                { city: '湖州', value: 1280 },
-                { city: '绍兴', value: 760 },
-                { city: '宁波', value: 540 },
-                { city: '金华', value: 360 },
-                { city: '衢州', value: 270 },
-                { city: '丽水', value: 155 }
-            ],
-            4: [
-                { city: '杭州', value: 1380 },
-                { city: '嘉兴', value: 1150 },
-                { city: '湖州', value: 1220 },
-                { city: '绍兴', value: 720 },
-                { city: '宁波', value: 510 },
-                { city: '金华', value: 340 },
-                { city: '衢州', value: 255 },
-                { city: '丽水', value: 148 }
-            ]
-        }
-    },
-    2024: {
-        yearly: [
-            { city: '杭州', value: 16200 },
-            { city: '嘉兴', value: 13800 },
-            { city: '湖州', value: 14799 },
-            { city: '绍兴', value: 8600 },
-            { city: '宁波', value: 6200 },
-            { city: '金华', value: 4000 },
-            { city: '衢州', value: 3000 },
-            { city: '丽水', value: 1700 }
-        ],
-        monthly: {
-            1: [
-                { city: '杭州', value: 1380 },
-                { city: '嘉兴', value: 1150 },
-                { city: '湖州', value: 1230 },
-                { city: '绍兴', value: 720 },
-                { city: '宁波', value: 500 },
-                { city: '金华', value: 340 },
-                { city: '衢州', value: 250 },
-                { city: '丽水', value: 145 }
-            ],
-            2: [
-                { city: '杭州', value: 1250 },
-                { city: '嘉兴', value: 1020 },
-                { city: '湖州', value: 1100 },
-                { city: '绍兴', value: 650 },
-                { city: '宁波', value: 460 },
-                { city: '金华', value: 310 },
-                { city: '衢州', value: 230 },
-                { city: '丽水', value: 135 }
-            ],
-            3: [
-                { city: '杭州', value: 1400 },
-                { city: '嘉兴', value: 1170 },
-                { city: '湖州', value: 1250 },
-                { city: '绍兴', value: 730 },
-                { city: '宁波', value: 520 },
-                { city: '金华', value: 350 },
-                { city: '衢州', value: 260 },
-                { city: '丽水', value: 150 }
-            ],
-            4: [
-                { city: '杭州', value: 1320 },
-                { city: '嘉兴', value: 1120 },
-                { city: '湖州', value: 1180 },
-                { city: '绍兴', value: 700 },
-                { city: '宁波', value: 490 },
-                { city: '金华', value: 330 },
-                { city: '衢州', value: 245 },
-                { city: '丽水', value: 142 }
-            ]
-        }
-    },
-    2023: {
-        yearly: [
-            { city: '杭州', value: 15500 },
-            { city: '嘉兴', value: 13200 },
-            { city: '湖州', value: 13654 },
-            { city: '绍兴', value: 8200 },
-            { city: '宁波', value: 5900 },
-            { city: '金华', value: 3800 },
-            { city: '衢州', value: 2800 },
-            { city: '丽水', value: 1600 }
-        ],
-        monthly: {
-            1: [
-                { city: '杭州', value: 1320 },
-                { city: '嘉兴', value: 1100 },
-                { city: '湖州', value: 1140 },
-                { city: '绍兴', value: 690 },
-                { city: '宁波', value: 480 },
-                { city: '金华', value: 320 },
-                { city: '衢州', value: 235 },
-                { city: '丽水', value: 138 }
-            ],
-            2: [
-                { city: '杭州', value: 1180 },
-                { city: '嘉兴', value: 980 },
-                { city: '湖州', value: 1020 },
-                { city: '绍兴', value: 620 },
-                { city: '宁波', value: 440 },
-                { city: '金华', value: 290 },
-                { city: '衢州', value: 215 },
-                { city: '丽水', value: 128 }
-            ],
-            3: [
-                { city: '杭州', value: 1350 },
-                { city: '嘉兴', value: 1120 },
-                { city: '湖州', value: 1160 },
-                { city: '绍兴', value: 700 },
-                { city: '宁波', value: 500 },
-                { city: '金华', value: 335 },
-                { city: '衢州', value: 250 },
-                { city: '丽水', value: 145 }
-            ],
-            4: [
-                { city: '杭州', value: 1280 },
-                { city: '嘉兴', value: 1070 },
-                { city: '湖州', value: 1100 },
-                { city: '绍兴', value: 670 },
-                { city: '宁波', value: 470 },
-                { city: '金华', value: 315 },
-                { city: '衢州', value: 235 },
-                { city: '丽水', value: 136 }
-            ]
-        }
-    }
-};
+let provincePortData = {};
 
 function updateRankList() {
     updateRankPeriodSelects();
