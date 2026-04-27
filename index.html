@@ -752,17 +752,13 @@ async function loadProvinceDataFromCloud() {
         if (!resp.ok) throw new Error(`加载省港口数据失败: ${resp.status}`);
         const data = await resp.json();
         
-        if (!data || data.length === 0) {
-            console.warn('省港口数据为空');
-            return false;
-        }
-        
+        // 所有城市列表
         const allCities = ['杭州', '嘉兴内河', '湖州', '绍兴', '宁波内河', '金华', '衢州', '丽水'];
         
         provincePortData = {};
         data.forEach(r => {
-            const year = String(r.year);
-            const month = String(r.month).padStart(2, '0');
+            const year = r.year;
+            const month = r.month;
             if (!provincePortData[year]) {
                 provincePortData[year] = { yearly: [], monthly: {} };
             }
@@ -955,6 +951,7 @@ async function handleProvinceFileUpload(input) {
         
         await saveProvinceDataToCloud(records);
         await loadProvinceDataFromCloud();
+        initRankPeriodSelects();
         updateRankList();
         
         const years = Object.keys(provincePortData);
@@ -974,6 +971,8 @@ async function clearProvinceData() {
     
     try {
         await clearProvinceCloudData();
+        provincePortData = {};
+        initRankPeriodSelects();
         updateRankList();
         showMessage('✅ 已清空省港口数据', 'success');
     } catch (e) {
@@ -2328,8 +2327,6 @@ document.getElementById('modeSelect').addEventListener('change', function() { do
 })();
 
 function updateRankList() {
-    updateRankPeriodSelects();
-    
     const startPeriod = document.getElementById('rankPeriodStart').value;
     const endPeriod = document.getElementById('rankPeriodEnd').value;
     
@@ -2365,7 +2362,7 @@ function updateRankList() {
     }).join('');
 }
 
-function updateRankPeriodSelects() {
+function initRankPeriodSelects() {
     const startSelect = document.getElementById('rankPeriodStart');
     const endSelect = document.getElementById('rankPeriodEnd');
     
@@ -2580,6 +2577,7 @@ function initTrendChart() {
 setTimeout(async function() {
     initTrendChart();
     await loadProvinceDataFromCloud();
+    initRankPeriodSelects();
     updateRankList();
 }, 100);
 </script>
