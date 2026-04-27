@@ -752,13 +752,17 @@ async function loadProvinceDataFromCloud() {
         if (!resp.ok) throw new Error(`加载省港口数据失败: ${resp.status}`);
         const data = await resp.json();
         
-        // 所有城市列表
+        if (!data || data.length === 0) {
+            console.warn('省港口数据为空');
+            return false;
+        }
+        
         const allCities = ['杭州', '嘉兴内河', '湖州', '绍兴', '宁波内河', '金华', '衢州', '丽水'];
         
         provincePortData = {};
         data.forEach(r => {
-            const year = r.year;
-            const month = r.month;
+            const year = String(r.year);
+            const month = String(r.month).padStart(2, '0');
             if (!provincePortData[year]) {
                 provincePortData[year] = { yearly: [], monthly: {} };
             }
@@ -2355,8 +2359,8 @@ function updateRankList() {
         return `<div class="${itemClass}">
             <div class="rank-num">${rank}</div>
             <div class="rank-city">${item.city}</div>
-            <div class="rank-value">${(item.value / 10000).toFixed(2)}</div>
-            <div class="rank-unit">亿吨</div>
+            <div class="rank-value">${item.value.toFixed(2)}</div>
+            <div class="rank-unit">万吨</div>
         </div>`;
     }).join('');
 }
