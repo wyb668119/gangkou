@@ -345,41 +345,41 @@
 </script>
 <script>
 (function() {
+    var URL_TIMEOUT = 6000;
     var libs = [
         { name: 'xlsx', urls: [
             'https://cdn.bootcdn.net/ajax/libs/xlsx/0.20.2/xlsx.full.min.js',
-            'https://cdn.jsdelivr.net/npm/xlsx@0.20.2/dist/xlsx.full.min.js',
-            'https://unpkg.com/xlsx@0.20.2/dist/xlsx.full.min.js'
+            'https://lib.baomitu.com/xlsx/0.20.2/xlsx.full.min.js',
+            'https://cdn.jsdelivr.net/npm/xlsx@0.20.2/dist/xlsx.full.min.js'
         ]},
         { name: 'Chart.js', urls: [
             'https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.7/chart.umd.min.js',
+            'https://lib.baomitu.com/Chart.js/4.4.7/chart.umd.min.js',
             'https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js'
         ]},
         { name: 'echarts', urls: [
             'https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js',
+            'https://lib.baomitu.com/echarts/5.5.0/echarts.min.js',
             'https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js'
         ]}
     ];
-    var remaining = libs.length;
-    function loadNext(lib, idx) {
-        if (idx >= lib.urls.length) { checkDone(); return; }
+    var loaded = 0, total = libs.length;
+    function tryLoad(lib, idx) {
+        if (idx >= lib.urls.length) { done(false); return; }
         var s = document.createElement('script');
+        var timer = setTimeout(function() { s.onload = s.onerror = null; tryLoad(lib, idx + 1); }, URL_TIMEOUT);
         s.src = lib.urls[idx];
         s.async = true;
-        s.onload = function() { checkDone(); };
-        s.onerror = function() { loadNext(lib, idx + 1); };
+        s.onload = function() { clearTimeout(timer); done(true); };
+        s.onerror = function() { clearTimeout(timer); tryLoad(lib, idx + 1); };
         document.body.appendChild(s);
     }
-    function checkDone() {
-        remaining--;
-        if (remaining === 0) {
-            if (window.__libResolve) window.__libResolve();
-        }
+    function done(ok) {
+        if (ok) loaded++;
+        if (--total === 0 && window.__libResolve) window.__libResolve(loaded === libs.length);
     }
-    window.__libsReady = new Promise(function(resolve) {
-        window.__libResolve = resolve;
-    });
-    libs.forEach(function(lib) { loadNext(lib, 0); });
+    window.__libsReady = new Promise(function(resolve) { window.__libResolve = resolve; });
+    libs.forEach(function(lib) { tryLoad(lib, 0); });
 })();
 </script>
 <script>
