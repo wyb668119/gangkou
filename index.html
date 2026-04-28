@@ -319,9 +319,9 @@
 </div>
 
 
-<script defer src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-<script defer src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.7/chart.umd.min.js"></script>
-<script defer src="https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.7/chart.umd.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
 <script>
 const SUPABASE_URL = 'https://yzqqkslbixqqgzjzekku.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6cXFrc2xiaXhxcWd6anpla2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMTYzNjcsImV4cCI6MjA5MTc5MjM2N30.8sXLtcreqjchJeI3F3oxsluKEBH8NZ3lgtWcKK6aOnY';
@@ -2319,7 +2319,9 @@ document.getElementById('modeSelect').addEventListener('change', function() { do
     const progressBar = document.getElementById('loadingProgressBar');
     const loadingTip = document.getElementById('loadingTip');
     const cloudLoadingEl = document.getElementById('cloudLoadingHint');
+    function hideLoading() { if (pageLoadingEl) { pageLoadingEl.style.opacity = '0'; pageLoadingEl.style.transition = 'opacity 0.4s'; setTimeout(() => { pageLoadingEl.style.display = 'none'; }, 400); } }
     function updateLoading(pct, tip) { if (progressBar) progressBar.style.width = pct + '%'; if (loadingTip && tip) loadingTip.textContent = tip; }
+    const forceHideTimer = setTimeout(hideLoading, 15000);
     updateLoading(10, '正在加载图表库…');
     await new Promise(r => setTimeout(r, 50));
     try {
@@ -2343,8 +2345,9 @@ document.getElementById('modeSelect').addEventListener('change', function() { do
         showMessage('⚠️ Supabase 连接失败: ' + e.message, 'error');
     } finally {
         updateLoading(100, '加载完成');
+        clearTimeout(forceHideTimer);
         await new Promise(r => setTimeout(r, 200));
-        if (pageLoadingEl) { pageLoadingEl.style.opacity = '0'; pageLoadingEl.style.transition = 'opacity 0.4s'; setTimeout(() => { pageLoadingEl.style.display = 'none'; }, 400); }
+        hideLoading();
         if (cloudLoadingEl) cloudLoadingEl.style.display = 'none';
     }
 })();
