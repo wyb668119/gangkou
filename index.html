@@ -6,7 +6,7 @@
     <title>港口分类货物吞吐量统计分析</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: linear-gradient(135deg, #e8f4f8 0%, #f0f6fa 50%, #e8f4f8 100%); font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; min-height: 100vh; padding: 14px; }
+        body { background: linear-gradient(135deg, #e8f4f8 0%, #f0f6fa 50%, #e8f4f8 100%); font-family: 'Segoe UI', 'Microsoft YaHei', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'PingFang SC', sans-serif; min-height: 100vh; padding: 14px; }
         .app { max-width: 1500px; margin: 0 auto; }
         .header { background: linear-gradient(135deg, #1a3a4a 0%, #0d2137 100%); padding: 20px 28px; border-radius: 20px 20px 0 0; border-bottom: 3px solid #2c7da0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; box-shadow: 0 4px 20px rgba(44,125,160,0.25); }
         .header h1 { color: #e8f4f8; font-size: 1.4rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
@@ -41,6 +41,12 @@
         .page-loading-progress { width: 240px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-top: 20px; overflow: hidden; }
         .page-loading-progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #00d4ff, #7b2cbf); border-radius: 4px; transition: width 0.4s ease; }
         .page-loading-tips { font-size: 0.82rem; color: rgba(255,255,255,0.5); margin-top: 12px; letter-spacing: 1px; }
+        .page-loading-error { margin-top: 20px; text-align: center; animation: fadeIn 0.5s; }
+        .page-loading-error-icon { font-size: 2rem; margin-bottom: 8px; }
+        .page-loading-error-text { font-size: 0.85rem; color: #f0a0a0; margin-bottom: 12px; }
+        .page-loading-retry-btn { background: linear-gradient(135deg, #2c7da0 0%, #1a5f7a 100%); border: none; color: white; padding: 10px 32px; border-radius: 30px; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; }
+        .page-loading-retry-btn:hover { background: linear-gradient(135deg, #3a9bc0 0%, #2c7da0 100%); transform: translateY(-1px); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .page-loading-dots span { animation: dotFade 1.4s infinite both; text-shadow: 0 0 8px rgba(0,212,255,0.8); }
         .page-loading-dots span:nth-child(2) { animation-delay: 0.2s; }
         .page-loading-dots span:nth-child(3) { animation-delay: 0.4s; }
@@ -141,9 +147,6 @@
         .rank-item.top3 .rank-value { color: #e8913e; }
         .rank-unit { font-size: 0.65rem; color: #8ba0b5; }
     </style>
-    <link rel="preload" href="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js" as="script" crossorigin>
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" as="script" crossorigin>
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js" as="script" crossorigin>
 </head>
 <body>
 <div class="page-loading" id="pageLoading">
@@ -153,6 +156,11 @@
     <div class="page-loading-text">正在加载系统资源</div>
     <div class="page-loading-progress"><div class="page-loading-progress-bar" id="loadingProgressBar"></div></div>
     <div class="page-loading-tips" id="loadingTip">正在加载第三方图表库…</div>
+    <div class="page-loading-error" id="loadingError" style="display:none;">
+        <div class="page-loading-error-icon">⚠</div>
+        <div class="page-loading-error-text">加载超时，可能是网络问题导致第三方库加载失败</div>
+        <button class="page-loading-retry-btn" onclick="location.reload()">重新加载</button>
+    </div>
 </div>
 <div class="app">
     <div class="header">
@@ -319,9 +327,25 @@
 </div>
 
 
-<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script>
+(function() {
+    var loadingTimer = setTimeout(function() {
+        var el = document.getElementById('pageLoading');
+        var tip = document.getElementById('loadingTip');
+        var err = document.getElementById('loadingError');
+        var bar = document.getElementById('loadingProgressBar');
+        if (el && el.style.display !== 'none') {
+            if (tip) tip.textContent = '加载超时，请检查网络后重试';
+            if (bar) bar.style.width = '100%';
+            if (err) err.style.display = '';
+        }
+    }, 20000);
+    window.__clearLoadingTimer = function() { clearTimeout(loadingTimer); };
+})();
+</script>
+<script src="https://cdn.bootcdn.net/ajax/libs/xlsx/0.20.2/xlsx.full.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.7/chart.umd.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
 <script>
 const SUPABASE_URL = 'https://yzqqkslbixqqgzjzekku.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6cXFrc2xiaXhxcWd6anpla2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMTYzNjcsImV4cCI6MjA5MTc5MjM2N30.8sXLtcreqjchJeI3F3oxsluKEBH8NZ3lgtWcKK6aOnY';
@@ -2320,10 +2344,8 @@ document.getElementById('modeSelect').addEventListener('change', function() { do
     const loadingTip = document.getElementById('loadingTip');
     const cloudLoadingEl = document.getElementById('cloudLoadingHint');
     function updateLoading(pct, tip) { if (progressBar) progressBar.style.width = pct + '%'; if (loadingTip && tip) loadingTip.textContent = tip; }
-    updateLoading(10, '正在加载图表库…');
-    await new Promise(r => setTimeout(r, 50));
+    updateLoading(15, '正在连接数据库…');
     try {
-        updateLoading(25, '正在连接数据库…');
         await supabaseTestConnection();
         updateLoading(50, '正在拉取云端数据…');
         allData = await loadAllDataFromCloud();
@@ -2342,6 +2364,7 @@ document.getElementById('modeSelect').addEventListener('change', function() { do
         renderTplTabs();
         showMessage('⚠️ Supabase 连接失败: ' + e.message, 'error');
     } finally {
+        if (window.__clearLoadingTimer) window.__clearLoadingTimer();
         updateLoading(100, '加载完成');
         await new Promise(r => setTimeout(r, 200));
         if (pageLoadingEl) { pageLoadingEl.style.opacity = '0'; pageLoadingEl.style.transition = 'opacity 0.4s'; setTimeout(() => { pageLoadingEl.style.display = 'none'; }, 400); }
