@@ -158,7 +158,7 @@
     <div class="page-loading-tips" id="loadingTip">正在加载第三方图表库…</div>
     <div class="page-loading-error" id="loadingError" style="display:none;">
         <div class="page-loading-error-icon">⚠</div>
-        <div class="page-loading-error-text">加载超时，可能是网络问题导致第三方库加载失败</div>
+        <div class="page-loading-error-text">加载失败，当前网络可能无法访问依赖的 CDN 资源。</div>
         <button class="page-loading-retry-btn" onclick="location.reload()">重新加载</button>
     </div>
 </div>
@@ -335,7 +335,7 @@
         var err = document.getElementById('loadingError');
         var bar = document.getElementById('loadingProgressBar');
         if (el && el.style.display !== 'none') {
-            if (tip) tip.textContent = '加载超时，请检查网络后重试';
+            if (tip) tip.textContent = '加载超时，请尝试切换网络或刷新页面';
             if (bar) bar.style.width = '100%';
             if (err) err.style.display = '';
         }
@@ -343,9 +343,45 @@
     window.__clearLoadingTimer = function() { clearTimeout(loadingTimer); };
 })();
 </script>
-<script src="https://cdn.bootcdn.net/ajax/libs/xlsx/0.20.2/xlsx.full.min.js"></script>
-<script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.7/chart.umd.min.js"></script>
-<script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+<script>
+(function() {
+    var libs = [
+        { name: 'xlsx', urls: [
+            'https://cdn.bootcdn.net/ajax/libs/xlsx/0.20.2/xlsx.full.min.js',
+            'https://cdn.jsdelivr.net/npm/xlsx@0.20.2/dist/xlsx.full.min.js',
+            'https://unpkg.com/xlsx@0.20.2/dist/xlsx.full.min.js'
+        ]},
+        { name: 'Chart.js', urls: [
+            'https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.7/chart.umd.min.js',
+            'https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js'
+        ]},
+        { name: 'echarts', urls: [
+            'https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js',
+            'https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js'
+        ]}
+    ];
+    var remaining = libs.length;
+    function loadNext(lib, idx) {
+        if (idx >= lib.urls.length) { checkDone(); return; }
+        var s = document.createElement('script');
+        s.src = lib.urls[idx];
+        s.async = true;
+        s.onload = function() { checkDone(); };
+        s.onerror = function() { loadNext(lib, idx + 1); };
+        document.body.appendChild(s);
+    }
+    function checkDone() {
+        remaining--;
+        if (remaining === 0) {
+            if (window.__libResolve) window.__libResolve();
+        }
+    }
+    window.__libsReady = new Promise(function(resolve) {
+        window.__libResolve = resolve;
+    });
+    libs.forEach(function(lib) { loadNext(lib, 0); });
+})();
+</script>
 <script>
 const SUPABASE_URL = 'https://yzqqkslbixqqgzjzekku.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6cXFrc2xiaXhxcWd6anpla2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMTYzNjcsImV4cCI6MjA5MTc5MjM2N30.8sXLtcreqjchJeI3F3oxsluKEBH8NZ3lgtWcKK6aOnY';
@@ -2338,13 +2374,27 @@ document.getElementById('importBackup').addEventListener('change', function(e) {
 
 document.getElementById('modeSelect').addEventListener('change', function() { document.getElementById('singlePeriod').style.display = this.value === 'single' ? 'flex' : 'none'; document.getElementById('comparePeriod').style.display = this.value === 'compare' ? 'flex' : 'none'; });
 
+function waitForLibs() {
+    return Promise.race([
+        window.__libsReady || Promise.resolve(),
+        new Promise(function(_, reject) { setTimeout(function() { reject(new Error('timeout')); }, 55000); })
+    ]).then(function() {
+        return typeof XLSX !== 'undefined' && typeof Chart !== 'undefined' && typeof echarts !== 'undefined';
+    }).catch(function() {
+        return false;
+    });
+}
+
 (async function init() {
     const pageLoadingEl = document.getElementById('pageLoading');
     const progressBar = document.getElementById('loadingProgressBar');
     const loadingTip = document.getElementById('loadingTip');
     const cloudLoadingEl = document.getElementById('cloudLoadingHint');
     function updateLoading(pct, tip) { if (progressBar) progressBar.style.width = pct + '%'; if (loadingTip && tip) loadingTip.textContent = tip; }
-    updateLoading(15, '正在连接数据库…');
+    updateLoading(15, '正在加载图表库…');
+    var libsOk = await waitForLibs();
+    if (!libsOk) { updateLoading(100, '加载失败'); document.getElementById('loadingError').style.display = ''; document.getElementById('loadingTip').textContent = '图表库加载失败，请检查网络后刷新'; if (window.__clearLoadingTimer) window.__clearLoadingTimer(); return; }
+    updateLoading(25, '正在连接数据库…');
     try {
         await supabaseTestConnection();
         updateLoading(50, '正在拉取云端数据…');
