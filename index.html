@@ -2196,7 +2196,7 @@ function quickQuery() {
     for (const region of regions) for (const period of periods) for (const cat of categories) {
         const isTotal = cat === '总计';
         const ur = filtered.find(r => r.region === region && r.period === period && r.category === cat);
-        bHtml += `<tr class="${isTotal ? 'total-row' : ''}"><td class="label">${esc(region)}</td><td>${esc(period.replace('-','年')+'月')}</td><td class="label">${esc(cat)}</td><td>${esc(ur?.unit || '吨')}</td>`;
+        bHtml += `<tr class="${isTotal ? 'total-row' : ''}"><td class="label">${esc(region)}</td><td>${esc(period.replace('-','年')+'月')}</td><td class="label">${esc(cat)}</td><td>${esc((ur && ur.unit) || '吨')}</td>`;
         for (const c of colCombos) { const rec = filtered.find(r => r.region === region && r.period === period && r.category === cat && r.direction === c.direction && r.tradeType === c.tradeType); bHtml += `<td class="num">${rec ? fmtNum(rec.value) : '-'}</td>`; }
         bHtml += '</tr>';
     }
@@ -2439,7 +2439,7 @@ function calculateCumulativeData(startPeriod, endPeriod) {
         const monthEnd = year === endYear ? endMonth : 12;
         
         for (let month = monthStart; month <= monthEnd; month++) {
-            const monthData = provincePortData[year].monthly?.[month] || [];
+            const monthData = (provincePortData[year].monthly && provincePortData[year].monthly[month]) || [];
             monthData.forEach(item => {
                 if (result.hasOwnProperty(item.city)) {
                     result[item.city] += item.value;
