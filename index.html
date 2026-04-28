@@ -6,7 +6,7 @@
     <title>港口分类货物吞吐量统计分析</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: linear-gradient(135deg, #e8f4f8 0%, #f0f6fa 50%, #e8f4f8 100%); font-family: 'Segoe UI', 'Microsoft YaHei', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'PingFang SC', sans-serif; min-height: 100vh; padding: 14px; }
+        body { background: linear-gradient(135deg, #e8f4f8 0%, #f0f6fa 50%, #e8f4f8 100%); font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; min-height: 100vh; padding: 14px; }
         .app { max-width: 1500px; margin: 0 auto; }
         .header { background: linear-gradient(135deg, #1a3a4a 0%, #0d2137 100%); padding: 20px 28px; border-radius: 20px 20px 0 0; border-bottom: 3px solid #2c7da0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; box-shadow: 0 4px 20px rgba(44,125,160,0.25); }
         .header h1 { color: #e8f4f8; font-size: 1.4rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
@@ -38,6 +38,9 @@
         .page-loading-ring::after { inset: 8px; border: 3px solid transparent; border-bottom-color: #7b2cbf; border-left-color: #7b2cbf; animation: spin 0.7s linear infinite reverse; }
         .page-loading-glow { position: absolute; inset: -10px; border-radius: 50%; background: radial-gradient(circle, rgba(0,212,255,0.3) 0%, transparent 70%); animation: pulse 1.5s ease-in-out infinite; }
         .page-loading-text { font-size: 1.15rem; color: #00d4ff; font-weight: 500; margin-top: 28px; letter-spacing: 3px; text-shadow: 0 0 10px rgba(0,212,255,0.5); }
+        .page-loading-progress { width: 240px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-top: 20px; overflow: hidden; }
+        .page-loading-progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #00d4ff, #7b2cbf); border-radius: 4px; transition: width 0.4s ease; }
+        .page-loading-tips { font-size: 0.82rem; color: rgba(255,255,255,0.5); margin-top: 12px; letter-spacing: 1px; }
         .page-loading-dots span { animation: dotFade 1.4s infinite both; text-shadow: 0 0 8px rgba(0,212,255,0.8); }
         .page-loading-dots span:nth-child(2) { animation-delay: 0.2s; }
         .page-loading-dots span:nth-child(3) { animation-delay: 0.4s; }
@@ -121,12 +124,12 @@
         .rank-actions { display: flex; gap: 6px; margin-left: auto; }
         .btn-link { background: linear-gradient(135deg, #e8f4fc 0%, #d6edf7 100%); border: 1px solid #a8d4e6; color: #2c7da0; font-size: 0.72rem; cursor: pointer; padding: 4px 12px; border-radius: 14px; transition: all 0.2s; font-weight: 500; }
         .btn-link:hover { background: linear-gradient(135deg, #2c7da0 0%, #1a5f7a 100%); color: white; border-color: #2c7da0; box-shadow: 0 2px 8px rgba(44,125,160,0.3); }
-        .rank-list { max-height: 280px; overflow-y: auto; overflow-x: hidden; }
+        .rank-list { max-height: 220px; overflow-y: auto; overflow-x: hidden; }
         .rank-list::-webkit-scrollbar { width: 5px; }
         .rank-list::-webkit-scrollbar-track { background: #f0f4f8; border-radius: 3px; }
         .rank-list::-webkit-scrollbar-thumb { background: #a8d4e6; border-radius: 3px; }
         .rank-list::-webkit-scrollbar-thumb:hover { background: #7bb8d4; }
-        .rank-item { display: flex; align-items: center; padding: 8px 10px; border-radius: 10px; margin-bottom: 6px; background: #f8fafd; transition: all 0.2s; border: 1px solid transparent; }
+        .rank-item { display: flex; align-items: center; padding: 5px 8px; border-radius: 8px; margin-bottom: 4px; background: #f8fafd; transition: all 0.2s; border: 1px solid transparent; }
         .rank-item:hover { background: #eef2f7; transform: translateX(2px); }
         .rank-item.top3 { background: linear-gradient(135deg, #fffbf0 0%, #fff8e8 100%); border: 1px solid #f5deb3; box-shadow: 0 2px 8px rgba(245,166,35,0.15); }
         .rank-item.huzhou { background: linear-gradient(135deg, #e8f4fc 0%, #d6edf7 100%); border: 1px solid #a8d4e6; }
@@ -136,18 +139,20 @@
         .rank-city { flex: 1; font-size: 0.75rem; color: #1a3a4a; font-weight: 500; }
         .rank-value { font-size: 0.75rem; font-weight: 600; color: #1a3a4a; margin-right: 3px; }
         .rank-item.top3 .rank-value { color: #e8913e; }
-        .rank-unit { font-size: 0.72rem; color: #8ba0b5; }
+        .rank-unit { font-size: 0.65rem; color: #8ba0b5; }
     </style>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <link rel="preload" href="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js" as="script" crossorigin>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" as="script" crossorigin>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js" as="script" crossorigin>
 </head>
 <body>
 <div class="page-loading" id="pageLoading">
     <div class="page-loading-ring">
         <div class="page-loading-glow"></div>
     </div>
-    <div class="page-loading-text">网页加载中<span class="page-loading-dots"><span>.</span><span>.</span><span>.</span></span></div>
+    <div class="page-loading-text">正在加载系统资源</div>
+    <div class="page-loading-progress"><div class="page-loading-progress-bar" id="loadingProgressBar"></div></div>
+    <div class="page-loading-tips" id="loadingTip">正在加载第三方图表库…</div>
 </div>
 <div class="app">
     <div class="header">
@@ -314,45 +319,9 @@
 </div>
 
 
-<script>
-(function() {
-    var URL_TIMEOUT = 6000;
-    var libs = [
-        { name: 'xlsx', urls: [
-            'https://cdn.bootcdn.net/ajax/libs/xlsx/0.20.2/xlsx.full.min.js',
-            'https://lib.baomitu.com/xlsx/0.20.2/xlsx.full.min.js',
-            'https://cdn.jsdelivr.net/npm/xlsx@0.20.2/dist/xlsx.full.min.js'
-        ]},
-        { name: 'Chart.js', urls: [
-            'https://cdn.bootcdn.net/ajax/libs/Chart.js/4.4.7/chart.umd.min.js',
-            'https://lib.baomitu.com/Chart.js/4.4.7/chart.umd.min.js',
-            'https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js'
-        ]},
-        { name: 'echarts', urls: [
-            'https://cdn.bootcdn.net/ajax/libs/echarts/5.5.0/echarts.min.js',
-            'https://lib.baomitu.com/echarts/5.5.0/echarts.min.js',
-            'https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js'
-        ]}
-    ];
-    var loaded = 0, total = libs.length;
-    function tryLoad(lib, idx) {
-        if (idx >= lib.urls.length) { done(false); return; }
-        var s = document.createElement('script');
-        var timer = setTimeout(function() { s.onload = s.onerror = null; tryLoad(lib, idx + 1); }, URL_TIMEOUT);
-        s.src = lib.urls[idx];
-        s.async = true;
-        s.onload = function() { clearTimeout(timer); done(true); };
-        s.onerror = function() { clearTimeout(timer); tryLoad(lib, idx + 1); };
-        document.body.appendChild(s);
-    }
-    function done(ok) {
-        if (ok) loaded++;
-        if (--total === 0 && window.__libResolve) window.__libResolve(loaded === libs.length);
-    }
-    window.__libsReady = new Promise(function(resolve) { window.__libResolve = resolve; });
-    libs.forEach(function(lib) { tryLoad(lib, 0); });
-})();
-</script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 <script>
 const SUPABASE_URL = 'https://yzqqkslbixqqgzjzekku.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6cXFrc2xiaXhxcWd6anpla2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMTYzNjcsImV4cCI6MjA5MTc5MjM2N30.8sXLtcreqjchJeI3F3oxsluKEBH8NZ3lgtWcKK6aOnY';
@@ -2345,27 +2314,22 @@ document.getElementById('importBackup').addEventListener('change', function(e) {
 
 document.getElementById('modeSelect').addEventListener('change', function() { document.getElementById('singlePeriod').style.display = this.value === 'single' ? 'flex' : 'none'; document.getElementById('comparePeriod').style.display = this.value === 'compare' ? 'flex' : 'none'; });
 
-function waitForLibs() {
-    return Promise.race([
-        window.__libsReady || Promise.resolve(),
-        new Promise(function(_, reject) { setTimeout(function() { reject(new Error('timeout')); }, 55000); })
-    ]).then(function() {
-        return typeof XLSX !== 'undefined' && typeof Chart !== 'undefined' && typeof echarts !== 'undefined';
-    }).catch(function() {
-        return false;
-    });
-}
-
 (async function init() {
     const pageLoadingEl = document.getElementById('pageLoading');
+    const progressBar = document.getElementById('loadingProgressBar');
+    const loadingTip = document.getElementById('loadingTip');
     const cloudLoadingEl = document.getElementById('cloudLoadingHint');
-    if (pageLoadingEl) pageLoadingEl.style.display = 'none';
-    if (cloudLoadingEl) cloudLoadingEl.style.display = 'block';
+    function updateLoading(pct, tip) { if (progressBar) progressBar.style.width = pct + '%'; if (loadingTip && tip) loadingTip.textContent = tip; }
+    updateLoading(10, '正在加载图表库…');
+    await new Promise(r => setTimeout(r, 50));
     try {
+        updateLoading(25, '正在连接数据库…');
         await supabaseTestConnection();
+        updateLoading(50, '正在拉取云端数据…');
         allData = await loadAllDataFromCloud();
         containerData = await loadContainerDataFromCloud();
         templates = await loadTemplatesFromCloud();
+        updateLoading(80, '正在渲染页面…');
         refreshOverview();
         renderTplTabs();
         const cnt = await supabaseGetCategoryCount();
@@ -2373,10 +2337,14 @@ function waitForLibs() {
         showMessage(`✅ Supabase 云端已连接${countInfo}`, 'success');
     } catch(e) {
         templates = [];
+        updateLoading(80, '正在渲染页面…');
         refreshOverview();
         renderTplTabs();
         showMessage('⚠️ Supabase 连接失败: ' + e.message, 'error');
     } finally {
+        updateLoading(100, '加载完成');
+        await new Promise(r => setTimeout(r, 200));
+        if (pageLoadingEl) { pageLoadingEl.style.opacity = '0'; pageLoadingEl.style.transition = 'opacity 0.4s'; setTimeout(() => { pageLoadingEl.style.display = 'none'; }, 400); }
         if (cloudLoadingEl) cloudLoadingEl.style.display = 'none';
     }
 })();
