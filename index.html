@@ -2627,12 +2627,20 @@ function initTrendChart() {
     });
 }
 
-setTimeout(async function() {
-    initTrendChart();
-    await loadProvinceDataFromCloud();
-    initRankPeriodSelects();
-    updateRankList();
-}, 100);
+// 图表和排行在 echarts 加载完成后异步初始化，不阻塞主渲染
+(async function initSecondary() {
+    try {
+        await loadScript('lib/echarts.min.js');
+        initTrendChart();
+        await loadProvinceDataFromCloud();
+        initRankPeriodSelects();
+        updateRankList();
+    } catch(e) {
+        console.warn('图表加载失败: ' + e.message);
+        initRankPeriodSelects();
+        updateRankList();
+    }
+})();
 </script>
 </body>
 </html>
