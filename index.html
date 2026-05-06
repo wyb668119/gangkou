@@ -141,7 +141,8 @@
         .rank-item.top3 .rank-value { color: #e8913e; }
         .rank-unit { font-size: 0.65rem; color: #8ba0b5; }
     </style>
-    <link rel="preload" href="lib/xlsx.full.min.js" as="script">
+    <link rel="preload" href="lib/echarts.min.js" as="script">
+    <link rel="preload" href="lib/chart.umd.min.js" as="script">
 </head>
 <body>
 <div class="page-loading" id="pageLoading">
@@ -317,9 +318,6 @@
 </div>
 
 
-<script src="lib/xlsx.full.min.js"></script>
-<script src="lib/chart.umd.min.js"></script>
-<script src="lib/echarts.min.js"></script>
 <script>
 const SUPABASE_URL = 'https://yzqqkslbixqqgzjzekku.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6cXFrc2xiaXhxcWd6anpla2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMTYzNjcsImV4cCI6MjA5MTc5MjM2N30.8sXLtcreqjchJeI3F3oxsluKEBH8NZ3lgtWcKK6aOnY';
@@ -338,6 +336,26 @@ const CATEGORY_ORDER = [
     '其中：玉米', '其中：大豆', '机械设备电器', '化工原料及制品', '有色金属', '轻工、医药产品',
     '农、林、牧、渔业产品', '其他', '其中：集装箱重量', '滚装汽车吞吐量', '其中：商品汽车'
 ];
+
+// 动态加载脚本，避免阻塞页面渲染
+const loadedScripts = {};
+function loadScript(src) {
+    if (loadedScripts[src]) return loadedScripts[src];
+    loadedScripts[src] = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('Failed to load: ' + src));
+        document.head.appendChild(s);
+    });
+    return loadedScripts[src];
+}
+// 懒加载 xlsx（仅在需要时加载）
+let xlsxPromise = null;
+function ensureXLSX() {
+    if (!xlsxPromise) xlsxPromise = loadScript('lib/xlsx.full.min.js');
+    return xlsxPromise;
+}
 
 let allData = [];
 let containerData = [];
@@ -844,6 +862,7 @@ async function clearProvinceCloudData() {
 }
 
 async function parseProvinceExcelFile(file) {
+    await ensureXLSX();
     const data = await file.arrayBuffer();
     const wb = XLSX.read(data, { type: 'array' });
     const records = [];
@@ -1117,6 +1136,7 @@ function parseContainerSheet(rows, sheetName, fileName) {
 }
 
 async function parseExcelFile(file) {
+    await ensureXLSX();
     const data = await file.arrayBuffer(); const wb = XLSX.read(data, { type: 'array' });
     const allRec = []; const containerRec = []; const fn = file.name.replace(/\.\w+$/, ''); const dbg = [];
     const skippedSheets = [];
@@ -2204,11 +2224,12 @@ function quickQuery() {
     document.getElementById('resultCard').style.display = 'block';
 }
 
-function exportCurrentTable() {
+async function exportCurrentTable() {
     const tables = document.querySelectorAll('table');
     let target = null;
     for (const t of tables) { if (t.querySelector('tbody') && t.querySelector('tbody').children.length > 0 && !t.querySelector('.no-data')) { target = t; } }
     if (!target) { showMessage('没有可导出的数据', 'warning'); return; }
+    await ensureXLSX();
     const wb = XLSX.utils.table_to_book(target, { sheet: '查询结果' });
     XLSX.writeFile(wb, `港口分类货物吞吐量_${new Date().toISOString().slice(0,10)}.xlsx`);
     showMessage('导出成功', 'success');
@@ -2318,21 +2339,33 @@ document.getElementById('modeSelect').addEventListener('change', function() { do
     const loadingTip = document.getElementById('loadingTip');
     const cloudLoadingEl = document.getElementById('cloudLoadingHint');
     function updateLoading(pct, tip) { if (progressBar) progressBar.style.width = pct + '%'; if (loadingTip && tip) loadingTip.textContent = tip; }
+
     updateLoading(10, '正在加载图表库…');
-    await new Promise(r => setTimeout(r, 50));
+
+    // 并行加载脚本和数据，消除瀑布流
     try {
-        updateLoading(25, '正在连接数据库…');
-        await supabaseTestConnection();
-        updateLoading(50, '正在拉取云端数据…');
-        allData = await loadAllDataFromCloud();
-        containerData = await loadContainerDataFromCloud();
-        templates = await loadTemplatesFromCloud();
+        const [_, dataResult, containerResult, templatesResult] = await Promise.all([
+            // 动态并行加载图表库
+            Promise.all([
+                loadScript('lib/echarts.min.js'),
+                loadScript('lib/chart.umd.min.js')
+            ]),
+            // 并行拉取云端数据
+            supabaseTestConnection().then(() => loadAllDataFromCloud()),
+            loadContainerDataFromCloud(),
+            loadTemplatesFromCloud()
+        ]);
+        allData = dataResult;
+        containerData = containerResult;
+        templates = templatesResult;
+
         updateLoading(80, '正在渲染页面…');
         refreshOverview();
         renderTplTabs();
-        const cnt = await supabaseGetCategoryCount();
-        const countInfo = cnt >= 0 ? `，共 ${cnt} 条记录` : '';
-        showMessage(`✅ Supabase 云端已连接${countInfo}`, 'success');
+        supabaseGetCategoryCount().then(cnt => {
+            const countInfo = cnt >= 0 ? `，共 ${cnt} 条记录` : '';
+            showMessage(`✅ Supabase 云端已连接${countInfo}`, 'success');
+        });
     } catch(e) {
         templates = [];
         updateLoading(80, '正在渲染页面…');
@@ -2341,7 +2374,6 @@ document.getElementById('modeSelect').addEventListener('change', function() { do
         showMessage('⚠️ Supabase 连接失败: ' + e.message, 'error');
     } finally {
         updateLoading(100, '加载完成');
-        await new Promise(r => setTimeout(r, 200));
         if (pageLoadingEl) { pageLoadingEl.style.opacity = '0'; pageLoadingEl.style.transition = 'opacity 0.4s'; setTimeout(() => { pageLoadingEl.style.display = 'none'; }, 400); }
         if (cloudLoadingEl) cloudLoadingEl.style.display = 'none';
     }

@@ -219,7 +219,6 @@
             margin-top: 12px;
         }
     </style>
-    <script src="lib/xlsx.full.min.js"></script>
 </head>
 <body>
 <div class="dashboard">
@@ -284,6 +283,25 @@
     const SUPABASE_URL = 'https://yzqqkslbixqqgzjzekku.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6cXFrc2xiaXhxcWd6anpla2t1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMTYzNjcsImV4cCI6MjA5MTc5MjM2N30.8sXLtcreqjchJeI3F3oxsluKEBH8NZ3lgtWcKK6aOnY';
     const TABLE_NAME = 'gangkou_data';
+
+    // 动态加载脚本，避免阻塞页面渲染
+    const loadedScripts = {};
+    function loadScript(src) {
+        if (loadedScripts[src]) return loadedScripts[src];
+        loadedScripts[src] = new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('Failed to load: ' + src));
+            document.head.appendChild(s);
+        });
+        return loadedScripts[src];
+    }
+    let xlsxPromise = null;
+    function ensureXLSX() {
+        if (!xlsxPromise) xlsxPromise = loadScript('lib/xlsx.full.min.js');
+        return xlsxPromise;
+    }
 
     let currentQueryMode = 'single';
     let currentData = [];
@@ -829,6 +847,7 @@
                 });
             }
         }
+        await ensureXLSX();
         const ws = XLSX.utils.json_to_sheet(exportRows);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, '查询结果');
@@ -871,6 +890,7 @@
 
     // ==================== Excel 上传解析 ====================
     async function parseExcelToRecords(data, fileNameHint = '') {
+        await ensureXLSX();
         const workbook = XLSX.read(data, { type: 'array' });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
@@ -1043,9 +1063,12 @@
     (async function init() {
         try {
             await supabaseTestConnection();
-            await refreshMonthsUI();
+            // 并行执行月份UI刷新和计数，消除串行瀑布流
+            const [_, cnt] = await Promise.all([
+                refreshMonthsUI(),
+                supabaseGetCount()
+            ]);
             setQueryMode('single');
-            const cnt = await supabaseGetCount();
             const countInfo = cnt >= 0 ? `，共 ${cnt} 条记录` : '';
             showMessage(`✅ Supabase 云端已连接${countInfo}`, 'success');
         } catch(e) {
