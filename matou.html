@@ -218,6 +218,53 @@
             border-radius: 20px;
             margin-top: 12px;
         }
+        .query-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .dock-search {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #f9fbfd;
+            padding: 4px 8px 4px 14px;
+            border-radius: 48px;
+            border: 1px solid #dfe8f0;
+        }
+        .dock-search input {
+            border: none;
+            outline: none;
+            padding: 6px 4px;
+            font-size: 0.85rem;
+            background: transparent;
+            width: 120px;
+            color: #1e3b5c;
+        }
+        .dock-search input::placeholder { color: #a0b4c8; }
+        .dock-search .btn { padding: 5px 14px; font-size: 0.8rem; }
+        .dock-search-clear { padding: 5px 10px; font-size: 0.8rem; }
+        .dock-search-result-bar {
+            font-size: 0.8rem;
+            color: #4a627a;
+            padding: 8px 16px;
+            background: #f0f6fe;
+            border-radius: 20px;
+            margin-top: 8px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .dock-search-result-bar .reset-link {
+            color: #2c7da0;
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: 500;
+        }
+        .dock-search-result-bar .reset-link:hover { color: #1f5f7a; }
+        .dock-search-result-bar.show { display: flex; }
+        .no-match { text-align: center; padding: 48px; color: #8ba0b5; }
     </style>
 </head>
 <body>
@@ -266,7 +313,14 @@
                     <button id="yoyBtn" class="btn analytics-btn" disabled>📉 同比</button>
                 </div>
             </div>
-            <button id="exportBtn" class="btn btn-green">📎 导出当前数据</button>
+            <div class="query-right">
+                <div class="dock-search">
+                    <input type="text" id="dockSearchInput" placeholder="码头名称搜索（≥2字）" maxlength="20">
+                    <button id="dockSearchBtn" class="btn btn-purple">🔍 搜索</button>
+                    <button id="dockSearchClear" class="btn" style="background:#7f8fa4;display:none;">✕ 清除</button>
+                </div>
+                <button id="exportBtn" class="btn btn-green">📎 导出当前数据</button>
+            </div>
         </div>
 
         <div class="table-wrapper">
@@ -274,6 +328,10 @@
                 <thead><tr id="headerRow"><th>序号</th><th>码头名称</th><th>企业代码</th><th>所属区县</th><th>月份/时间段</th><th>吞吐量(吨)</th><th id="annualHeader">年度累计(吨)</th></tr></thead>
                 <tbody id="tableBody"><tr><td colspan="7" class="no-data">请选择查询条件后点击查询</td></tr></tbody>
             </table>
+        </div>
+        <div id="dockSearchResultBar" class="dock-search-result-bar">
+            <span id="dockSearchResultText"></span>
+            <span class="reset-link" id="dockSearchResetLink">显示全部结果</span>
         </div>
         <div class="footer">正数蓝色，负数红色。数据自动保存到当前存储模式。</div>
     </div>
@@ -741,6 +799,7 @@
         document.getElementById('momBtn').classList.remove('active');
         document.getElementById('yoyBtn').classList.remove('active');
         removeExtraColumn();
+        resetDockSearch();
 
         const mode = currentQueryMode;
 
@@ -1038,6 +1097,7 @@
             document.getElementById('yoyBtn').disabled = true;
         }
         removeExtraColumn();
+        resetDockSearch();
         activeAnalytics = null;
         document.getElementById('momBtn').classList.remove('active');
         document.getElementById('yoyBtn').classList.remove('active');
@@ -1058,6 +1118,107 @@
     document.getElementById('momBtn').addEventListener('click', handleMom);
     document.getElementById('yoyBtn').addEventListener('click', handleYoy);
     document.getElementById('exportBtn').addEventListener('click', exportCurrentData);
+
+    // ==================== 码头名称搜索 ====================
+    let _fullQueryData = [];        // 搜索前的完整查询数据
+    let _dockSearchActive = false;  // 搜索是否激活
+
+    function renderFilteredTable(data) {
+        const tbody = document.getElementById('tableBody');
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="no-match">没有匹配的码头名称</td></tr>';
+            return;
+        }
+        const mode = currentQueryMode;
+        let html = '';
+        if (mode === 'single') {
+            for (let idx = 0; idx < data.length; idx++) {
+                const item = data[idx];
+                const serial = idx + 1;
+                html += `<tr><td>${serial}</td><td>${escapeHtml(item.dock_name)}</td><td>${escapeHtml(item.company_code)}</td><td>${escapeHtml(item.district)}</td><td>${escapeHtml(item.periodLabel)}</td><td>${item.throughput.toLocaleString()}</td><td>${item.annual_total.toLocaleString()}</td></tr>`;
+            }
+        } else {
+            for (let idx = 0; idx < data.length; idx++) {
+                const item = data[idx];
+                const serial = idx + 1;
+                html += `<tr><td>${serial}</td><td>${escapeHtml(item.dock_name)}</td><td>${escapeHtml(item.company_code)}</td><td>${escapeHtml(item.district)}</td><td>${escapeHtml(item.periodLabel)}</td><td>${item.throughput.toLocaleString()}</td></tr>`;
+            }
+        }
+        tbody.innerHTML = html;
+    }
+
+    function resetDockSearch() {
+        _dockSearchActive = false;
+        _fullQueryData = [];
+        document.getElementById('dockSearchInput').value = '';
+        document.getElementById('dockSearchClear').style.display = 'none';
+        document.getElementById('dockSearchResultBar').classList.remove('show');
+    }
+
+    function doDockSearch() {
+        const input = document.getElementById('dockSearchInput');
+        const keyword = input.value.trim();
+
+        if (keyword.length < 2) {
+            showMessage('请输入至少2个中文字符进行搜索', 'warning');
+            input.focus();
+            return;
+        }
+
+        if (!currentData || currentData.length === 0) {
+            showMessage('请先查询数据再进行搜索', 'warning');
+            return;
+        }
+
+        // 首次搜索时保存完整数据
+        if (!_dockSearchActive) {
+            _fullQueryData = [...currentData];
+        }
+
+        const results = _fullQueryData.filter(item => item.dock_name.includes(keyword));
+
+        // 替换 currentData 并重新渲染
+        currentData = results;
+        _dockSearchActive = true;
+
+        // 移除多余的 analytics 列（如果有）
+        removeExtraColumn();
+        activeAnalytics = null;
+        document.getElementById('momBtn').classList.remove('active');
+        document.getElementById('yoyBtn').classList.remove('active');
+
+        renderFilteredTable(results);
+
+        // 显示结果条
+        const bar = document.getElementById('dockSearchResultBar');
+        const text = document.getElementById('dockSearchResultText');
+        text.textContent = `🔍 码头名称包含「${keyword}」：找到 ${results.length} 条记录`;
+        bar.classList.add('show');
+
+        // 显示清除按钮
+        document.getElementById('dockSearchClear').style.display = 'inline-block';
+    }
+
+    document.getElementById('dockSearchBtn').addEventListener('click', doDockSearch);
+    document.getElementById('dockSearchInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') doDockSearch();
+    });
+
+    document.getElementById('dockSearchClear').addEventListener('click', function() {
+        if (_fullQueryData.length > 0) {
+            currentData = [..._fullQueryData];
+            renderFilteredTable(_fullQueryData);
+        }
+        resetDockSearch();
+    });
+
+    document.getElementById('dockSearchResetLink').addEventListener('click', function() {
+        if (_fullQueryData.length > 0) {
+            currentData = [..._fullQueryData];
+            renderFilteredTable(_fullQueryData);
+        }
+        resetDockSearch();
+    });
 
     // ==================== 初始化 ====================
     (async function init() {
