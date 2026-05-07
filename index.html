@@ -2364,10 +2364,10 @@ function renderHistoricalTable() {
     const tbody = document.getElementById('histBody');
     const merges = table.merges || {};
 
-    // Clear thead — all rows render in tbody to preserve original Excel structure
+    // Clear thead — all rows in tbody to preserve original Excel row order
     thead.innerHTML = '';
 
-    // Find first non-empty row to skip leading blanks
+    // Find first non-empty row
     let startRow = 0;
     for (let i = 0; i < table.rows.length; i++) {
         if (table.rows[i].some(c => String(c || '').trim() !== '')) {
@@ -2376,10 +2376,24 @@ function renderHistoricalTable() {
         }
     }
 
-    // Render all rows in tbody, preserving Excel structure including merged cells
+    // Find first data row: row where >50% of non-empty cells are numeric
+    let firstDataRow = table.rows.length;
+    for (let ri = startRow; ri < table.rows.length; ri++) {
+        const cells = table.rows[ri].filter(c => String(c || '').trim() !== '');
+        if (cells.length === 0) continue;
+        const nums = cells.filter(c => !isNaN(parseFloat(String(c))) && isFinite(String(c))).length;
+        if (nums > cells.length / 2) {
+            firstDataRow = ri;
+            break;
+        }
+    }
+
+    // Render all rows: header rows use <th>, data rows use <td>
     let bodyHtml = '';
     for (let ri = startRow; ri < table.rows.length; ri++) {
         const row = table.rows[ri];
+        const isHeader = ri < firstDataRow;
+        const tag = isHeader ? 'th' : 'td';
         bodyHtml += '<tr>';
         row.forEach((cell, ci) => {
             const key = `${ri}:${ci}`;
@@ -2388,7 +2402,7 @@ function renderHistoricalTable() {
             const cs = merges[key] ? ` colspan="${merges[key].colspan}"` : '';
             const val = String(cell || '').trim();
             const isNum = !isNaN(parseFloat(val)) && isFinite(val);
-            bodyHtml += `<td${rs}${cs} class="${isNum ? 'num' : ''}">${esc(val)}</td>`;
+            bodyHtml += `<${tag}${rs}${cs} class="${isNum ? 'num' : ''}">${esc(val)}</${tag}>`;
         });
         bodyHtml += '</tr>';
     }
