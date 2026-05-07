@@ -161,7 +161,7 @@
         </div>
         <div class="header-nav">
             <a href="matou.html">📊 按码头统计分析</a>
-            <a href="account.html" style="margin-left:8px;">👤 账号管理</a>
+            <a href="account.html" style="margin-left:10px;font-size:0.75rem;color:#7fb3c8;text-decoration:none;">账号管理</a>
         </div>
     </div>
     <div class="main">
@@ -339,7 +339,7 @@
             <div class="table-wrapper" style="margin-top:12px;"><table id="resultTable"><thead id="resultHead"></thead><tbody id="resultBody"></tbody></table></div>
         </div>
 
-        <div class="footer">湖州市港航管理中心港口科 2026年4月制作</div>
+        <div class="footer">湖州市港航管理中心港口科 2026年4月制作 <span id="loginStatus" style="margin-left:12px;font-size:0.72rem;cursor:pointer;" onclick="toggleLogin()"></span></div>
     </div>
 </div>
 
@@ -393,6 +393,7 @@ let provincePortData = {};
 let historicalTables = [];
 let activeHistoricalIdx = -1;
 let histFileSelected = null;
+let currentAdmin = null;
 
 function sbHeaders(extra = {}) {
     return {
@@ -2372,8 +2373,36 @@ async function clearHistoricalTables() {
     saveHistoricalTables();
 }
 
+// ── 登录状态 ──
+function updateLoginStatus() {
+    const el = document.getElementById('loginStatus');
+    if (currentAdmin) {
+        el.innerHTML = `👤 ${esc(currentAdmin.username)} <span style="color:#c0392b;">[退出]</span>`;
+        el.title = '点击退出登录';
+    } else {
+        el.innerHTML = `<span style="color:#2c7da0;">[登录]</span>`;
+        el.title = '点击登录';
+    }
+}
+
+async function toggleLogin() {
+    if (currentAdmin) {
+        currentAdmin = null;
+        updateLoginStatus();
+        return;
+    }
+    const admin = await requireAdminAuth();
+    if (admin) {
+        currentAdmin = admin;
+        updateLoginStatus();
+    } else {
+        showMessage('账号或密码错误', 'error');
+    }
+}
+
 // ── 管理员鉴权 ──
 async function requireAdminAuth() {
+    if (currentAdmin) return currentAdmin;
     const username = prompt('请输入管理员账号：');
     if (!username) return null;
     const password = prompt('请输入密码：');
@@ -2643,6 +2672,7 @@ document.getElementById('modeSelect').addEventListener('change', function() { do
         updateLoading(100, '加载完成');
         if (pageLoadingEl) { pageLoadingEl.style.opacity = '0'; pageLoadingEl.style.transition = 'opacity 0.4s'; setTimeout(() => { pageLoadingEl.style.display = 'none'; }, 400); }
         if (cloudLoadingEl) cloudLoadingEl.style.display = 'none';
+        updateLoginStatus();
     }
 })();
 
