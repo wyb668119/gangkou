@@ -2283,16 +2283,19 @@ document.getElementById('histUploadBtn').addEventListener('click', async functio
             }
             if (title !== histFileSelected.name.replace(/\.\w+$/, '')) break;
         }
-        // Get merge ranges
+        // Get merge ranges — align keys with sheet_to_json row/col indices
         const merges = ws['!merges'] || [];
+        const range = XLSX.utils.decode_range(ws['!ref']);
         const mergeMap = {};
         merges.forEach(m => {
             for (let r = m.s.r; r <= m.e.r; r++) {
                 for (let c = m.s.c; c <= m.e.c; c++) {
+                    const relR = r - range.s.r;
+                    const relC = c - range.s.c;
                     if (r === m.s.r && c === m.s.c) {
-                        mergeMap[`${r}:${c}`] = { rowspan: m.e.r - m.s.r + 1, colspan: m.e.c - m.s.c + 1 };
+                        mergeMap[`${relR}:${relC}`] = { rowspan: m.e.r - m.s.r + 1, colspan: m.e.c - m.s.c + 1 };
                     } else {
-                        mergeMap[`${r}:${c}`] = { skip: true };
+                        mergeMap[`${relR}:${relC}`] = { skip: true };
                     }
                 }
             }
