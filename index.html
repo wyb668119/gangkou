@@ -282,6 +282,28 @@
         </div>
 
         <div class="card">
+            <div class="card-title">📊 历年港口统计资料</div>
+            <div class="upload-area">
+                <input type="file" id="histExcelFile" accept=".xlsx, .xls" style="display:none;">
+                <button class="btn" onclick="document.getElementById('histExcelFile').click()">选择Excel文件</button>
+                <span id="histFileName" class="file-info">未选择文件</span>
+                <button id="histUploadBtn" class="btn btn-green" disabled>上传解析</button>
+            </div>
+            <div class="help-text">💡 支持上传任意Excel表格，自动提取标题并生成网页表格。数据仅在当前页面有效，刷新后自动清除。</div>
+            <div id="histMsg" class="msg-area"></div>
+            <div id="histTabArea" style="display:none;margin-top:12px;">
+                <div class="tpl-tabs" id="histTabs"></div>
+                <div id="histTableArea" style="display:none;">
+                    <div class="action-bar" style="margin-top:0;padding-top:0;border-top:none;margin-bottom:10px;">
+                        <button class="btn btn-green" onclick="exportHistoricalTable()">导出当前表格</button>
+                        <button class="btn btn-red btn-sm" onclick="clearHistoricalTables()">清空所有</button>
+                    </div>
+                    <div class="table-wrapper"><table id="histTable"><thead id="histHead"></thead><tbody id="histBody"></tbody></table></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
             <div class="card-title">� 自定义表格模板</div>
             <div class="tpl-tabs" id="tplTabs"></div>
             <div id="tplEditorArea"></div>
@@ -363,6 +385,9 @@ let templates = [];
 let activeTplIdx = -1;
 let lastDebugInfo = null;
 let provincePortData = {};
+let historicalTables = [];
+let activeHistoricalIdx = -1;
+let histFileSelected = null;
 
 function sbHeaders(extra = {}) {
     return {
@@ -2222,6 +2247,169 @@ function quickQuery() {
     }
     document.getElementById('resultBody').innerHTML = bHtml || '<tr><td colspan="99" class="no-data">无数据</td></tr>';
     document.getElementById('resultCard').style.display = 'block';
+}
+
+// ── 历年港口统计资料 ──
+document.getElementById('histExcelFile').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    histFileSelected = file || null;
+    document.getElementById('histFileName').innerText = file ? file.name : '未选择文件';
+    document.getElementById('histUploadBtn').disabled = !file;
+});
+
+document.getElementById('histUploadBtn').addEventListener('click', async function() {
+    if (!histFileSelected) return;
+    const btn = this;
+    btn.disabled = true;
+    btn.textContent = '解析中...';
+    try {
+        await ensureXLSX();
+        const data = await histFileSelected.arrayBuffer();
+        const wb = XLSX.read(data, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        if (!rows || rows.length === 0) {
+            showMessage('表格为空，无法解析', 'error');
+            btn.disabled = false;
+            btn.textContent = '上传解析';
+            return;
+        }
+        // Extract title: first non-empty cell in first 5 rows
+        let title = histFileSelected.name.replace(/\.\w+$/, '');
+        for (let i = 0; i < Math.min(rows.length, 5); i++) {
+            for (let j = 0; j < rows[i].length; j++) {
+                const cell = String(rows[i][j] || '').trim();
+                if (cell) { title = cell.slice(0, 60); break; }
+            }
+            if (title !== histFileSelected.name.replace(/\.\w+$/, '')) break;
+        }
+        // Get merge ranges
+        const merges = ws['!merges'] || [];
+        const mergeMap = {};
+        merges.forEach(m => {
+            for (let r = m.s.r; r <= m.e.r; r++) {
+                for (let c = m.s.c; c <= m.e.c; c++) {
+                    if (r === m.s.r && c === m.s.c) {
+                        mergeMap[`${r}:${c}`] = { rowspan: m.e.r - m.s.r + 1, colspan: m.e.c - m.s.c + 1 };
+                    } else {
+                        mergeMap[`${r}:${c}`] = { skip: true };
+                    }
+                }
+            }
+        });
+        const headers = rows.length > 0 ? rows[0] : [];
+        const dataRows = rows.slice(1).filter(row => row.some(c => String(c || '').trim() !== ''));
+        historicalTables.push({ title, headers, rows: dataRows, merges: mergeMap });
+        activeHistoricalIdx = historicalTables.length - 1;
+        renderHistoricalTabs();
+        renderHistoricalTable();
+        document.getElementById('histTabArea').style.display = 'block';
+        document.getElementById('histTableArea').style.display = 'block';
+        showMessage(`✅ 已解析「${title}」`, 'success');
+    } catch (e) {
+        showMessage('解析失败: ' + e.message, 'error');
+    }
+    btn.disabled = false;
+    btn.textContent = '上传解析';
+    histFileSelected = null;
+    document.getElementById('histExcelFile').value = '';
+    document.getElementById('histFileName').innerText = '未选择文件';
+    document.getElementById('histUploadBtn').disabled = true;
+});
+
+function renderHistoricalTabs() {
+    const container = document.getElementById('histTabs');
+    let html = '';
+    historicalTables.forEach((t, i) => {
+        const active = i === activeHistoricalIdx ? ' active' : '';
+        html += `<div class="tpl-tab${active}" onclick="switchHistoricalTab(${i})">${esc(t.title)}<span class="tpl-tab-close" onclick="event.stopPropagation();removeHistoricalTab(${i})">×</span></div>`;
+    });
+    container.innerHTML = html;
+}
+
+function switchHistoricalTab(idx) {
+    if (activeHistoricalIdx === idx) return;
+    activeHistoricalIdx = idx;
+    renderHistoricalTabs();
+    renderHistoricalTable();
+}
+
+function removeHistoricalTab(idx) {
+    if (!confirm(`确定删除「${historicalTables[idx].title}」？`)) return;
+    historicalTables.splice(idx, 1);
+    if (historicalTables.length === 0) {
+        activeHistoricalIdx = -1;
+        document.getElementById('histTabArea').style.display = 'none';
+        document.getElementById('histTableArea').style.display = 'none';
+        return;
+    }
+    if (activeHistoricalIdx > idx) activeHistoricalIdx--;
+    else if (activeHistoricalIdx >= historicalTables.length) activeHistoricalIdx = historicalTables.length - 1;
+    renderHistoricalTabs();
+    renderHistoricalTable();
+}
+
+function clearHistoricalTables() {
+    if (historicalTables.length === 0) return;
+    if (!confirm('确定清空所有历年港口统计资料？')) return;
+    historicalTables = [];
+    activeHistoricalIdx = -1;
+    document.getElementById('histTabArea').style.display = 'none';
+    document.getElementById('histTableArea').style.display = 'none';
+}
+
+function renderHistoricalTable() {
+    if (activeHistoricalIdx < 0 || activeHistoricalIdx >= historicalTables.length) return;
+    const table = historicalTables[activeHistoricalIdx];
+    const thead = document.getElementById('histHead');
+    const tbody = document.getElementById('histBody');
+    const merges = table.merges || {};
+
+    // Render header row
+    let headerHtml = '<tr>';
+    table.headers.forEach((cell, ci) => {
+        const key = `0:${ci}`;
+        if (merges[key] && merges[key].skip) return;
+        const rs = merges[key] ? ` rowspan="${merges[key].rowspan}"` : '';
+        const cs = merges[key] ? ` colspan="${merges[key].colspan}"` : '';
+        headerHtml += `<th${rs}${cs}>${esc(String(cell))}</th>`;
+    });
+    headerHtml += '</tr>';
+    thead.innerHTML = headerHtml;
+
+    // Render data rows
+    let bodyHtml = '';
+    table.rows.forEach((row, ri) => {
+        bodyHtml += '<tr>';
+        row.forEach((cell, ci) => {
+            const key = `${ri + 1}:${ci}`;
+            if (merges[key] && merges[key].skip) return;
+            const rs = merges[key] ? ` rowspan="${merges[key].rowspan}"` : '';
+            const cs = merges[key] ? ` colspan="${merges[key].colspan}"` : '';
+            const val = String(cell || '').trim();
+            const isNum = !isNaN(parseFloat(val)) && isFinite(val);
+            bodyHtml += `<td${rs}${cs} class="${isNum ? 'num' : ''}">${esc(val)}</td>`;
+        });
+        bodyHtml += '</tr>';
+    });
+    tbody.innerHTML = bodyHtml || '<tr><td colspan="99" class="no-data">空表格</td></tr>';
+}
+
+async function exportHistoricalTable() {
+    if (activeHistoricalIdx < 0 || activeHistoricalIdx >= historicalTables.length) {
+        showMessage('没有可导出的数据', 'warning');
+        return;
+    }
+    const table = historicalTables[activeHistoricalIdx];
+    const tableEl = document.getElementById('histTable');
+    if (!tableEl || !tableEl.querySelector('tbody') || tableEl.querySelector('.no-data')) {
+        showMessage('表格为空，无法导出', 'warning');
+        return;
+    }
+    await ensureXLSX();
+    const wb = XLSX.utils.table_to_book(tableEl, { sheet: table.title });
+    XLSX.writeFile(wb, `${table.title}.xlsx`);
+    showMessage(`✅ 已导出「${table.title}」`, 'success');
 }
 
 async function exportCurrentTable() {
