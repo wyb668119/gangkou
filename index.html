@@ -2297,9 +2297,8 @@ document.getElementById('histUploadBtn').addEventListener('click', async functio
                 }
             }
         });
-        const headers = rows.length > 0 ? rows[0] : [];
-        const dataRows = rows.slice(1).filter(row => row.some(c => String(c || '').trim() !== ''));
-        historicalTables.push({ title, headers, rows: dataRows, merges: mergeMap });
+        // Store all rows as-is to preserve original Excel structure (no thead/tbody split)
+        historicalTables.push({ title, rows: rows, merges: mergeMap });
         activeHistoricalIdx = historicalTables.length - 1;
         renderHistoricalTabs();
         renderHistoricalTable();
@@ -2365,24 +2364,25 @@ function renderHistoricalTable() {
     const tbody = document.getElementById('histBody');
     const merges = table.merges || {};
 
-    // Render header row
-    let headerHtml = '<tr>';
-    table.headers.forEach((cell, ci) => {
-        const key = `0:${ci}`;
-        if (merges[key] && merges[key].skip) return;
-        const rs = merges[key] ? ` rowspan="${merges[key].rowspan}"` : '';
-        const cs = merges[key] ? ` colspan="${merges[key].colspan}"` : '';
-        headerHtml += `<th${rs}${cs}>${esc(String(cell))}</th>`;
-    });
-    headerHtml += '</tr>';
-    thead.innerHTML = headerHtml;
+    // Clear thead — all rows render in tbody to preserve original Excel structure
+    thead.innerHTML = '';
 
-    // Render data rows
+    // Find first non-empty row to skip leading blanks
+    let startRow = 0;
+    for (let i = 0; i < table.rows.length; i++) {
+        if (table.rows[i].some(c => String(c || '').trim() !== '')) {
+            startRow = i;
+            break;
+        }
+    }
+
+    // Render all rows in tbody, preserving Excel structure including merged cells
     let bodyHtml = '';
-    table.rows.forEach((row, ri) => {
+    for (let ri = startRow; ri < table.rows.length; ri++) {
+        const row = table.rows[ri];
         bodyHtml += '<tr>';
         row.forEach((cell, ci) => {
-            const key = `${ri + 1}:${ci}`;
+            const key = `${ri}:${ci}`;
             if (merges[key] && merges[key].skip) return;
             const rs = merges[key] ? ` rowspan="${merges[key].rowspan}"` : '';
             const cs = merges[key] ? ` colspan="${merges[key].colspan}"` : '';
@@ -2391,7 +2391,7 @@ function renderHistoricalTable() {
             bodyHtml += `<td${rs}${cs} class="${isNum ? 'num' : ''}">${esc(val)}</td>`;
         });
         bodyHtml += '</tr>';
-    });
+    }
     tbody.innerHTML = bodyHtml || '<tr><td colspan="99" class="no-data">空表格</td></tr>';
 }
 
