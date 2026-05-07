@@ -281,16 +281,17 @@
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-title">📊 历年港口统计资料</div>
-            <div class="upload-area">
-                <input type="file" id="histExcelFile" accept=".xlsx, .xls" style="display:none;">
-                <button class="btn-link" onclick="document.getElementById('histExcelFile').click()">选择Excel文件</button>
-                <span id="histFileName" class="file-info">未选择文件</span>
-                <button id="histUploadBtn" class="btn-link" disabled>上传解析</button>
-            </div>
-            <div class="help-text">💡 支持上传任意Excel表格，自动提取标题并生成网页表格。数据仅在当前页面有效，刷新后自动清除。</div>
-            <div id="histMsg" class="msg-area"></div>
+	        <div class="card">
+	            <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid #eef2f7;margin-bottom:10px;">
+	                <div style="font-size:0.88rem;font-weight:600;color:#1a3a4a;display:flex;align-items:center;gap:6px;">📊 历年港口统计资料</div>
+	                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+	                    <input type="file" id="histExcelFile" accept=".xlsx, .xls" style="display:none;">
+	                    <button class="btn-link" onclick="document.getElementById('histExcelFile').click()">选择Excel文件</button>
+	                    <span id="histFileName" class="file-info">未选择文件</span>
+	                    <button id="histUploadBtn" class="btn-link" disabled>上传解析</button>
+	                </div>
+	            </div>
+	            <div id="histMsg" class="msg-area"></div>
             <div id="histTabArea" style="display:none;margin-top:12px;">
                 <div class="tpl-tabs" id="histTabs"></div>
                 <div id="histTableArea" style="display:none;">
@@ -347,6 +348,7 @@ const CATEGORY_TABLE = 'gangkou_category_data';
 const CONTAINER_TABLE = 'gangkou_container_data';
 const TEMPLATE_TABLE = 'gangkou_templates';
 const PROVINCE_TABLE = 'province_port_data';
+const HISTORICAL_TABLE = 'gangkou_historical_blob';
 const MAX_TEMPLATES = 10;
 const KNOWN_REGIONS = ['全市', '吴兴区', '南浔区', '长兴县', '德清县', '安吉县', '南太湖新区'];
 const DIRECTIONS = ['总计', '出港', '进港'];
@@ -2303,6 +2305,7 @@ document.getElementById('histUploadBtn').addEventListener('click', async functio
         // Store all rows as-is to preserve original Excel structure (no thead/tbody split)
         historicalTables.push({ title, rows: rows, merges: mergeMap });
         activeHistoricalIdx = historicalTables.length - 1;
+        saveHistoricalTables();
         renderHistoricalTabs();
         renderHistoricalTable();
         document.getElementById('histTabArea').style.display = 'block';
@@ -2347,6 +2350,7 @@ function removeHistoricalTab(idx) {
     }
     if (activeHistoricalIdx > idx) activeHistoricalIdx--;
     else if (activeHistoricalIdx >= historicalTables.length) activeHistoricalIdx = historicalTables.length - 1;
+    saveHistoricalTables();
     renderHistoricalTabs();
     renderHistoricalTable();
 }
@@ -2358,6 +2362,40 @@ function clearHistoricalTables() {
     activeHistoricalIdx = -1;
     document.getElementById('histTabArea').style.display = 'none';
     document.getElementById('histTableArea').style.display = 'none';
+    saveHistoricalTables();
+}
+
+// ── 历年港口统计资料 Supabase 云端持久化 ──
+async function saveHistoricalTables() {
+    try {
+        const data = historicalTables.map(t => ({ title: t.title, rows: t.rows, merges: t.merges }));
+        const url = `${SUPABASE_URL}/rest/v1/${HISTORICAL_TABLE}?on_conflict=id`;
+        await fetch(url, {
+            method: 'POST',
+            headers: sbHeaders({ 'Prefer': 'return=minimal,resolution=merge-duplicates' }),
+            body: JSON.stringify([{ id: 1, data: JSON.stringify(data) }])
+        });
+    } catch (e) { console.warn('保存历年表格失败:', e); }
+}
+
+async function loadHistoricalTables() {
+    try {
+        const url = `${SUPABASE_URL}/rest/v1/${HISTORICAL_TABLE}?select=data&id=eq.1`;
+        const resp = await fetch(url, { headers: sbHeaders() });
+        if (!resp.ok) return;
+        const rows = await resp.json();
+        if (rows.length && rows[0].data) {
+            const parsed = typeof rows[0].data === 'string' ? JSON.parse(rows[0].data) : rows[0].data;
+            if (parsed.length > 0) {
+                historicalTables = parsed;
+                activeHistoricalIdx = 0;
+                renderHistoricalTabs();
+                renderHistoricalTable();
+                document.getElementById('histTabArea').style.display = 'block';
+                document.getElementById('histTableArea').style.display = 'block';
+            }
+        }
+    } catch (e) { console.warn('加载历年表格失败:', e); }
 }
 
 function renderHistoricalTable() {
@@ -2567,6 +2605,7 @@ document.getElementById('modeSelect').addEventListener('change', function() { do
         updateLoading(80, '正在渲染页面…');
         refreshOverview();
         renderTplTabs();
+        loadHistoricalTables();
         supabaseGetCategoryCount().then(cnt => {
             const countInfo = cnt >= 0 ? `，共 ${cnt} 条记录` : '';
             showMessage(`✅ Supabase 云端已连接${countInfo}`, 'success');
@@ -2576,6 +2615,7 @@ document.getElementById('modeSelect').addEventListener('change', function() { do
         updateLoading(80, '正在渲染页面…');
         refreshOverview();
         renderTplTabs();
+        loadHistoricalTables();
         showMessage('⚠️ Supabase 连接失败: ' + e.message, 'error');
     } finally {
         updateLoading(100, '加载完成');
