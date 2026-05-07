@@ -65,6 +65,18 @@
             </div>
         </div>
 
+        <!-- 首次创建区域 -->
+        <div id="firstSetupArea" class="card hidden">
+            <div class="login-form">
+                <h2>🔑 创建超级管理员</h2>
+                <p style="font-size:0.8rem;color:#4a627a;margin-bottom:16px;">首次使用，请创建第一个管理员账号</p>
+                <input type="text" id="setupUsername" placeholder="管理员账号" autocomplete="off">
+                <input type="password" id="setupPassword" placeholder="密码">
+                <button class="btn btn-orange" onclick="createFirstAdmin()" style="width:100%;justify-content:center;">创建超级管理员</button>
+                <div id="setupMsg" class="msg-area"></div>
+            </div>
+        </div>
+
         <!-- 管理区域 -->
         <div id="adminArea" class="card hidden">
             <div class="card-title">👤 管理员列表</div>
@@ -199,6 +211,44 @@ async function deleteAccount(id, username) {
         loadAdminList();
     } catch (e) { showMsg('adminMsg', '删除失败: ' + e.message, 'error'); }
 }
+
+// 首次创建超级管理员
+async function createFirstAdmin() {
+    const username = document.getElementById('setupUsername').value.trim();
+    const password = document.getElementById('setupPassword').value.trim();
+    if (!username || !password) { showMsg('setupMsg', '请填写账号和密码', 'error'); return; }
+    try {
+        const url = `${SUPABASE_URL}/rest/v1/${ACCOUNTS_TABLE}`;
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: sbHeaders(),
+            body: JSON.stringify({ username, password, role: 'super_admin' })
+        });
+        if (!resp.ok) {
+            const err = await resp.text();
+            if (resp.status === 409) { showMsg('setupMsg', '账号已存在', 'error'); return; }
+            showMsg('setupMsg', '创建失败: ' + err, 'error'); return;
+        }
+        showMsg('setupMsg', '✅ 超级管理员创建成功，请登录', 'success');
+        document.getElementById('firstSetupArea').classList.add('hidden');
+        document.getElementById('loginArea').classList.remove('hidden');
+        document.getElementById('loginUsername').value = username;
+    } catch (e) { showMsg('setupMsg', '创建失败: ' + e.message, 'error'); }
+}
+
+// 页面加载时检查是否有账号
+(async function init() {
+    try {
+        const url = `${SUPABASE_URL}/rest/v1/${ACCOUNTS_TABLE}?select=id&limit=1`;
+        const resp = await fetch(url, { headers: sbHeaders({ 'Prefer': 'count=exact' }) });
+        if (!resp.ok) return;
+        const count = parseInt(resp.headers.get('Content-Range')?.split('/')[1] || '1');
+        if (count === 0) {
+            document.getElementById('loginArea').classList.add('hidden');
+            document.getElementById('firstSetupArea').classList.remove('hidden');
+        }
+    } catch (e) { /* 静默处理 */ }
+})();
 </script>
 </body>
 </html>
