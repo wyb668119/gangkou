@@ -159,7 +159,10 @@
             <h1>港口分类货物吞吐量统计分析</h1>
             <div class="sub">上传月度统计表 · 自定义表格模板 · 灵活生成数据表</div>
         </div>
-        <div class="header-nav"><a href="matou.html">📊 按码头统计分析</a></div>
+        <div class="header-nav">
+            <a href="matou.html">📊 按码头统计分析</a>
+            <a href="account.html" style="margin-left:8px;">👤 账号管理</a>
+        </div>
     </div>
     <div class="main">
         <div class="card">
@@ -2261,6 +2264,8 @@ document.getElementById('histExcelFile').addEventListener('change', function(e) 
 
 document.getElementById('histUploadBtn').addEventListener('click', async function() {
     if (!histFileSelected) return;
+    const admin = await requireAdminAuth();
+    if (!admin) { showMessage('请先登录管理员账号', 'error'); return; }
     const btn = this;
     btn.disabled = true;
     btn.textContent = '解析中...';
@@ -2355,14 +2360,31 @@ function removeHistoricalTab(idx) {
     renderHistoricalTable();
 }
 
-function clearHistoricalTables() {
+async function clearHistoricalTables() {
     if (historicalTables.length === 0) return;
+    const admin = await requireAdminAuth();
+    if (!admin) { showMessage('请先登录管理员账号', 'error'); return; }
     if (!confirm('确定清空所有历年港口统计资料？')) return;
     historicalTables = [];
     activeHistoricalIdx = -1;
     document.getElementById('histTabArea').style.display = 'none';
     document.getElementById('histTableArea').style.display = 'none';
     saveHistoricalTables();
+}
+
+// ── 管理员鉴权 ──
+async function requireAdminAuth() {
+    const username = prompt('请输入管理员账号：');
+    if (!username) return null;
+    const password = prompt('请输入密码：');
+    if (!password) return null;
+    try {
+        const url = `${SUPABASE_URL}/rest/v1/gangkou_admin_accounts?username=eq.${encodeURIComponent(username)}&password=eq.${encodeURIComponent(password)}&select=id,username,role`;
+        const resp = await fetch(url, { headers: sbHeaders() });
+        if (!resp.ok) return null;
+        const rows = await resp.json();
+        return rows.length > 0 ? rows[0] : null;
+    } catch (e) { return null; }
 }
 
 // ── 历年港口统计资料 Supabase 云端持久化 ──
