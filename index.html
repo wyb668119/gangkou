@@ -288,7 +288,7 @@
 	                <div style="font-size:0.88rem;font-weight:600;color:#1a3a4a;display:flex;align-items:center;gap:6px;">📊 历年港口统计资料</div>
 	                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
 	                    <input type="file" id="histExcelFile" accept=".xlsx, .xls" style="display:none;">
-	                    <button class="btn-link" onclick="document.getElementById('histExcelFile').click()">选择Excel文件</button>
+	                    <button class="btn-link" onclick="authThenHistPickFile()">选择Excel文件</button>
 	                    <span id="histFileName" class="file-info">未选择文件</span>
 	                    <button id="histUploadBtn" class="btn-link" disabled>上传解析</button>
 	                </div>
@@ -1016,6 +1016,16 @@ async function authThenProvinceUpload() {
         updateLoginStatus();
     }
     document.getElementById('provinceFileInput').click();
+}
+
+async function authThenHistPickFile() {
+    if (!currentAdmin) {
+        const admin = await requireAdminAuth();
+        if (!admin) { showMessage('请先登录管理员账号', 'error'); return; }
+        currentAdmin = admin;
+        updateLoginStatus();
+    }
+    document.getElementById('histExcelFile').click();
 }
 
 async function handleProvinceFileUpload(input) {
