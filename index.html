@@ -161,7 +161,6 @@
         </div>
         <div class="header-nav">
             <a href="matou.html">📊 按码头统计分析</a>
-            <a href="account.html" style="margin-left:10px;font-size:0.75rem;color:#7fb3c8;text-decoration:none;">账号管理</a>
         </div>
     </div>
     <div class="main">
@@ -169,13 +168,13 @@
             <div class="card-title">📂 数据上传</div>
             <div class="upload-area">
                 <input type="file" id="excelFile" accept=".xlsx, .xls" multiple style="display:none;">
-                <button class="btn" onclick="document.getElementById('excelFile').click()">选择Excel文件</button>
+                <button class="btn" onclick="authThenPickFile()">选择Excel文件</button>
                 <span id="fileName" class="file-info">未选择文件</span>
                 <button id="uploadBtn" class="btn btn-green" disabled>上传并解析</button>
                 <button id="clearAllBtn" class="btn btn-red btn-sm">清空数据</button>
                 <button id="exportBackupBtn" class="btn btn-orange btn-sm">导出备份</button>
                 <input type="file" id="importBackup" accept=".json" style="display:none;">
-                <button class="btn btn-sm" onclick="document.getElementById('importBackup').click()">导入备份</button>
+                <button class="btn btn-sm" onclick="authThenImportBackup()">导入备份</button>
             </div>
             <div class="help-text">💡 支持上传行业统计平台生成的港口分类货物吞吐量表。地区和月份自动识别。数据通过 Supabase 云端实时同步，所有用户共享同一数据库。</div>
             <div id="uploadMsg" class="msg-area"></div>
@@ -210,7 +209,7 @@
                 <div class="rank-title">全省内河港口吞吐量排行
                     <div class="rank-actions" style="margin-left:auto;">
                         <input type="file" id="provinceFileInput" accept=".xls,.xlsx" style="display:none;" onchange="handleProvinceFileUpload(this)">
-                        <button class="btn-link" onclick="document.getElementById('provinceFileInput').click()">上传</button>
+                        <button class="btn-link" onclick="authThenProvinceUpload()">上传</button>
                         <button class="btn-link" onclick="clearProvinceData()">清空</button>
                     </div>
                 </div>
@@ -339,7 +338,7 @@
             <div class="table-wrapper" style="margin-top:12px;"><table id="resultTable"><thead id="resultHead"></thead><tbody id="resultBody"></tbody></table></div>
         </div>
 
-        <div class="footer">湖州市港航管理中心港口科 2026年4月制作 <span id="loginStatus" style="margin-left:12px;font-size:0.72rem;cursor:pointer;" onclick="toggleLogin()"></span></div>
+        <div class="footer">湖州市港航管理中心港口科 2026年4月制作 <span id="loginStatus" style="margin-left:12px;font-size:0.72rem;cursor:pointer;" onclick="toggleLogin()"></span> <a href="account.html" style="margin-left:8px;font-size:0.7rem;color:#7fb3c8;text-decoration:none;">账号管理</a></div>
     </div>
 </div>
 
@@ -998,6 +997,26 @@ function showMessage(msg, type) { const d = document.getElementById('uploadMsg')
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
 function fmtNum(n) { if (n === null || n === undefined) return '-'; if (typeof n === 'string') return n; return Number.isInteger(n) ? n.toLocaleString('zh-CN') : n.toLocaleString('zh-CN', {maximumFractionDigits:2}); }
 function safeNum(v) { if (v === null || v === undefined || v === '' || v === '-') return null; if (typeof v === 'number') return isNaN(v) ? null : v; const s = String(v).replace(/[,，\s%％]/g, ''); const n = parseFloat(s); return isNaN(n) ? null : n; }
+
+async function authThenImportBackup() {
+    if (!currentAdmin) {
+        const admin = await requireAdminAuth();
+        if (!admin) { showMessage('请先登录管理员账号', 'error'); return; }
+        currentAdmin = admin;
+        updateLoginStatus();
+    }
+    document.getElementById('importBackup').click();
+}
+
+async function authThenProvinceUpload() {
+    if (!currentAdmin) {
+        const admin = await requireAdminAuth();
+        if (!admin) { showMessage('请先登录管理员账号', 'error'); return; }
+        currentAdmin = admin;
+        updateLoginStatus();
+    }
+    document.getElementById('provinceFileInput').click();
+}
 
 async function handleProvinceFileUpload(input) {
     const file = input.files[0];
@@ -2400,6 +2419,16 @@ async function toggleLogin() {
     }
 }
 
+async function authThenPickFile() {
+    if (!currentAdmin) {
+        const admin = await requireAdminAuth();
+        if (!admin) { showMessage('请先登录管理员账号', 'error'); return; }
+        currentAdmin = admin;
+        updateLoginStatus();
+    }
+    document.getElementById('excelFile').click();
+}
+
 // ── 管理员鉴权 ──
 async function requireAdminAuth() {
     if (currentAdmin) return currentAdmin;
@@ -2534,6 +2563,12 @@ document.getElementById('excelFile').addEventListener('change', function(e) { se
 
 document.getElementById('uploadBtn').addEventListener('click', async function() {
     if (!selectedFiles.length) return;
+    if (!currentAdmin) {
+        const admin = await requireAdminAuth();
+        if (!admin) { showMessage('请先登录管理员账号', 'error'); return; }
+        currentAdmin = admin;
+        updateLoginStatus();
+    }
     const btn = this; btn.disabled = true; btn.textContent = '上传中...';
     let allRec = [], containerRec = [], errors = [];
     for (const file of selectedFiles) { try { const result = await parseExcelFile(file); if (result.cargoRecords.length === 0 && result.containerRecords.length === 0) { let errMsg = '无数据'; if (result.skippedSheets && result.skippedSheets.length > 0) { errMsg = `无法识别月份（表格: ${result.skippedSheets.join(', ')}），请在表标题中注明月份如"2025年12月"`; } errors.push(`${file.name}: ${errMsg}`); } else { allRec.push(...result.cargoRecords); containerRec.push(...result.containerRecords); if (result.skippedSheets && result.skippedSheets.length > 0) { errors.push(`${file.name}: 部分表格跳过（无法识别月份: ${result.skippedSheets.join(', ')}）`); } } } catch (err) { errors.push(`${file.name}: ${err.message}`); } }
@@ -2569,6 +2604,12 @@ document.getElementById('uploadBtn').addEventListener('click', async function() 
 });
 
 document.getElementById('clearAllBtn').addEventListener('click', async function() {
+    if (!currentAdmin) {
+        const admin = await requireAdminAuth();
+        if (!admin) { showMessage('请先登录管理员账号', 'error'); return; }
+        currentAdmin = admin;
+        updateLoginStatus();
+    }
     const pw = prompt('请输入密码：');
     if (pw !== '8119') { showMessage('密码错误', 'error'); return; }
     if (!confirm('确定清空所有云端数据？此操作不可恢复！')) return;
