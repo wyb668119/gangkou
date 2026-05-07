@@ -608,9 +608,6 @@
         const e = parseMonthKey(end);
         return (e.year * 12 + e.month) - (s.year * 12 + s.month);
     }
-    function getRangeYearStart(period) {
-        return `${period.slice(0,4)}-01`;
-    }
 
     async function queryRange(startMonth, endMonth) {
         const all = await getAllData();
@@ -639,7 +636,6 @@
                 periodLabel: `${startMonth.replace('-', '.')}—${endMonth.replace('-', '.')}`,
                 throughput: group.throughput_sum,
                 annual_total: null,
-                // 用于环比同比计算
                 _rangeStart: startMonth,
                 _rangeEnd: endMonth
             });
@@ -752,32 +748,12 @@
                         }
                     }
                 } else {
-                    // ——— 时间段累计模式 ———
+                    // ——— 时间段累计模式（仅同比） ———
                     const rs = item._rangeStart;
                     const re = item._rangeEnd;
                     if (!rs || !re) { display = '数据不全'; continue; }
-                    const rangeLen = monthDiff(rs, re);
 
-                    if (extraType === 'mom') {
-                        const prevStart = shiftMonth(rs, -(rangeLen + 1));
-                        const prevEnd = shiftMonth(re, -(rangeLen + 1));
-                        // 当前累计
-                        const currSum = item.throughput;
-                        // 上一期累计
-                        let prevSum = 0;
-                        for (const rec of allData) {
-                            if (rec.company_code === item.company_code && rec.period >= prevStart && rec.period <= prevEnd) {
-                                prevSum += rec.monthly_tonnage;
-                            }
-                        }
-                        if (prevSum === 0 && !allData.some(r => r.company_code === item.company_code && r.period >= prevStart && r.period <= prevEnd)) {
-                            display = '数据不全';
-                        } else {
-                            const inc = currSum - prevSum;
-                            value = inc;
-                            display = inc.toLocaleString();
-                        }
-                    } else if (extraType === 'yoy') {
+                    if (extraType === 'yoy') {
                         const prevStart = shiftMonth(rs, -12);
                         const prevEnd = shiftMonth(re, -12);
                         const currSum = item.throughput;
@@ -817,6 +793,7 @@
     }
 
     async function handleMom() {
+        if (currentQueryMode !== 'single') { showMessage('环比仅支持单月查询模式', 'warning'); return; }
         if (!currentData.length) { showMessage('请先查询数据', 'warning'); return; }
         if (activeAnalytics === 'mom') return;
         removeExtraColumn();
@@ -902,7 +879,7 @@
                 data = await queryRange(start, end);
                 currentData = data;
                 renderBaseTable(data, 'range');
-                document.getElementById('momBtn').disabled = false;
+                document.getElementById('momBtn').disabled = true;
                 document.getElementById('yoyBtn').disabled = false;
             }
             const annualTh = document.getElementById('annualHeader');
@@ -964,40 +941,24 @@
             }
         } else {
             let extraValues = [];
-            if (activeAnalytics === 'mom' || activeAnalytics === 'yoy') {
+            if (activeAnalytics === 'yoy') {
                 const allData = await getAllData();
                 for (let item of currentData) {
                     const rs = item._rangeStart;
                     const re = item._rangeEnd;
                     if (!rs || !re) { extraValues.push('数据不全'); continue; }
-                    const rangeLen = monthDiff(rs, re);
-                    if (activeAnalytics === 'mom') {
-                        const prevStart = shiftMonth(rs, -(rangeLen + 1));
-                        const prevEnd = shiftMonth(re, -(rangeLen + 1));
-                        let prevSum = 0;
-                        let hasData = false;
-                        for (const rec of allData) {
-                            if (rec.company_code === item.company_code && rec.period >= prevStart && rec.period <= prevEnd) {
-                                prevSum += rec.monthly_tonnage;
-                                hasData = true;
-                            }
+                    const prevStart = shiftMonth(rs, -12);
+                    const prevEnd = shiftMonth(re, -12);
+                    let prevSum = 0;
+                    let hasData = false;
+                    for (const rec of allData) {
+                        if (rec.company_code === item.company_code && rec.period >= prevStart && rec.period <= prevEnd) {
+                            prevSum += rec.monthly_tonnage;
+                            hasData = true;
                         }
-                        if (!hasData) extraValues.push('数据不全');
-                        else extraValues.push(item.throughput - prevSum);
-                    } else {
-                        const prevStart = shiftMonth(rs, -12);
-                        const prevEnd = shiftMonth(re, -12);
-                        let prevSum = 0;
-                        let hasData = false;
-                        for (const rec of allData) {
-                            if (rec.company_code === item.company_code && rec.period >= prevStart && rec.period <= prevEnd) {
-                                prevSum += rec.monthly_tonnage;
-                                hasData = true;
-                            }
-                        }
-                        if (!hasData) extraValues.push('数据不全');
-                        else extraValues.push(item.throughput - prevSum);
                     }
+                    if (!hasData) extraValues.push('数据不全');
+                    else extraValues.push(item.throughput - prevSum);
                 }
             }
             for (let idx = 0; idx < currentData.length; idx++) {
@@ -1202,7 +1163,7 @@
             rangeGroup.style.display = 'flex';
             singleBtn.classList.remove('active');
             rangeBtn.classList.add('active');
-            document.getElementById('momBtn').disabled = false;
+            document.getElementById('momBtn').disabled = true;
             document.getElementById('yoyBtn').disabled = false;
         }
         removeExtraColumn();
@@ -1229,8 +1190,8 @@
     document.getElementById('exportBtn').addEventListener('click', exportCurrentData);
 
     // ==================== 码头名称搜索 ====================
-    let _fullQueryData = [];        // 搜索前的完整查询数据
-    let _dockSearchActive = false;  // 搜索是否激活
+    let _fullQueryData = [];
+    let _dockSearchActive = false;
 
     function renderFilteredTable(data) {
         const tbody = document.getElementById('tableBody');
@@ -1279,18 +1240,15 @@
             return;
         }
 
-        // 首次搜索时保存完整数据
         if (!_dockSearchActive) {
             _fullQueryData = [...currentData];
         }
 
         const results = _fullQueryData.filter(item => item.dock_name.includes(keyword));
 
-        // 替换 currentData 并重新渲染
         currentData = results;
         _dockSearchActive = true;
 
-        // 移除多余的 analytics 列（如果有）
         removeExtraColumn();
         activeAnalytics = null;
         document.getElementById('momBtn').classList.remove('active');
@@ -1298,13 +1256,11 @@
 
         renderFilteredTable(results);
 
-        // 显示结果条
         const bar = document.getElementById('dockSearchResultBar');
         const text = document.getElementById('dockSearchResultText');
         text.textContent = `🔍 码头名称包含「${keyword}」：找到 ${results.length} 条记录`;
         bar.classList.add('show');
 
-        // 显示清除按钮
         document.getElementById('dockSearchClear').style.display = 'inline-block';
     }
 
@@ -1333,7 +1289,6 @@
     (async function init() {
         try {
             await supabaseTestConnection();
-            // 并行执行月份UI刷新和计数，消除串行瀑布流
             const [_, cnt] = await Promise.all([
                 refreshMonthsUI(),
                 supabaseGetCount()
