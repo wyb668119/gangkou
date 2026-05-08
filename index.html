@@ -50,6 +50,7 @@
         .page-loading-progress { width: 240px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-top: 20px; overflow: hidden; }
         .page-loading-progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #00d4ff, #7b2cbf); border-radius: 4px; transition: width 0.4s ease; }
         .page-loading-tips { font-size: 0.82rem; color: rgba(255,255,255,0.5); margin-top: 12px; letter-spacing: 1px; }
+        .page-loading-pct { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-top: 6px; text-align: center; font-variant-numeric: tabular-nums; }
         .page-loading-dots span { animation: dotFade 1.4s infinite both; text-shadow: 0 0 8px rgba(0,212,255,0.8); }
         .page-loading-dots span:nth-child(2) { animation-delay: 0.2s; }
         .page-loading-dots span:nth-child(3) { animation-delay: 0.4s; }
@@ -160,6 +161,7 @@
     </div>
     <div class="page-loading-text">正在加载系统资源</div>
     <div class="page-loading-progress"><div class="page-loading-progress-bar" id="loadingProgressBar"></div></div>
+    <div class="page-loading-pct" id="loadingPct">0%</div>
     <div class="page-loading-tips" id="loadingTip">正在加载第三方图表库…</div>
 </div>
 <div class="app">
@@ -2754,29 +2756,50 @@ document.getElementById('modeSelect').addEventListener('change', function() { do
     const pageLoadingEl = document.getElementById('pageLoading');
     const progressBar = document.getElementById('loadingProgressBar');
     const loadingTip = document.getElementById('loadingTip');
+    const loadingPct = document.getElementById('loadingPct');
     const cloudLoadingEl = document.getElementById('cloudLoadingHint');
-    function updateLoading(pct, tip) { if (progressBar) progressBar.style.width = pct + '%'; if (loadingTip && tip) loadingTip.textContent = tip; }
+    function updateLoading(pct, tip) {
+        if (progressBar) progressBar.style.width = pct + '%';
+        if (loadingPct) loadingPct.textContent = Math.round(pct) + '%';
+        if (loadingTip && tip) loadingTip.textContent = tip;
+    }
 
-    updateLoading(10, '正在加载图表库…');
+    updateLoading(5, '正在初始化…');
 
-    // 并行加载脚本和数据，消除瀑布流
+    // 按步骤更新进度，让用户看到实际加载进展
     try {
-        const [_, dataResult, containerResult, templatesResult] = await Promise.all([
-            // 动态并行加载图表库
-            Promise.all([
-                loadScript('lib/echarts.min.js'),
-                loadScript('lib/chart.umd.min.js')
-            ]),
-            // 并行拉取云端数据
-            supabaseTestConnection().then(() => loadAllDataFromCloud()),
-            loadContainerDataFromCloud(),
-            loadTemplatesFromCloud()
+        // ── 第1步：加载 eCharts（~1MB，最耗时） ──
+        updateLoading(8, '正在加载图表库 eCharts…');
+        await loadScript('lib/echarts.min.js');
+        updateLoading(28, 'eCharts 加载完成，正在加载 Chart.js…');
+
+        // ── 第2步：加载 Chart.js ──
+        await loadScript('lib/chart.umd.min.js');
+        updateLoading(40, '图表库加载完成，正在连接数据库…');
+
+        // ── 第3步：并行加载云端数据，各自更新进度 ──
+        const [dataResult, containerResult, templatesResult] = await Promise.all([
+            supabaseTestConnection().then(() => {
+                updateLoading(48, '数据库连接成功，正在加载货物数据…');
+                return loadAllDataFromCloud().then(r => {
+                    updateLoading(68, '货物数据加载完成');
+                    return r;
+                });
+            }),
+            loadContainerDataFromCloud().then(r => {
+                updateLoading(76, '集装箱数据加载完成');
+                return r;
+            }),
+            loadTemplatesFromCloud().then(r => {
+                updateLoading(84, '模板数据加载完成');
+                return r;
+            })
         ]);
         allData = dataResult;
         containerData = containerResult;
         templates = templatesResult;
 
-        updateLoading(80, '正在渲染页面…');
+        updateLoading(90, '正在渲染页面…');
         refreshOverview();
         renderTplTabs();
         loadHistoricalTables();
@@ -2786,7 +2809,7 @@ document.getElementById('modeSelect').addEventListener('change', function() { do
         });
     } catch(e) {
         templates = [];
-        updateLoading(80, '正在渲染页面…');
+        updateLoading(90, '正在渲染页面…');
         refreshOverview();
         renderTplTabs();
         loadHistoricalTables();
