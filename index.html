@@ -175,50 +175,40 @@
         </div>
     </div>
     <div class="main">
-        <div class="card">
-            <div class="card-title">📂 数据上传</div>
-            <div class="upload-area">
-                <input type="file" id="excelFile" accept=".xlsx, .xls" multiple style="display:none;">
-                <button class="btn" onclick="authThenPickFile()">选择Excel文件</button>
-                <span id="fileName" class="file-info">未选择文件</span>
-                <button id="uploadBtn" class="btn btn-green" disabled>上传并解析</button>
-                <button id="clearAllBtn" class="btn btn-red btn-sm">清空数据</button>
-                <button id="exportBackupBtn" class="btn btn-orange btn-sm">导出备份</button>
-                <input type="file" id="importBackup" accept=".json" style="display:none;">
-                <button class="btn btn-sm" onclick="authThenImportBackup()">导入备份</button>
-            </div>
-            <div class="help-text">💡 支持上传行业统计平台生成的港口分类货物吞吐量表。地区和月份自动识别。数据通过 Supabase 云端实时同步，所有用户共享同一数据库。</div>
-            <div id="uploadMsg" class="msg-area"></div>
-        </div>
+        	        <div class="card">
+	            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;border-bottom:none;padding-bottom:0;margin-bottom:0;">
+	                <span onclick="switchOverviewTab('stats')" style="cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px;font-weight:600;font-size:0.88rem;color:#1a3a4a;">📂 已上传数据概览</span>
+	                <span id="overviewToggleBtn" onclick="switchOverviewTab('overview')" style="cursor:pointer;user-select:none;font-size:0.78rem;color:#2c7da0;font-weight:600;padding:4px 14px;border-radius:20px;background:#edf5fa;transition:all 0.2s;">当月数据概述 ▸</span>
+	            </div>
+	            <!-- 统计概览视图 -->
+	            <div id="overviewStatsArea">
+	                <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:14px;">
+	                    <div style="flex:1;min-width:240px;">
+	                        <div class="stats-bar">
+	                            <div class="stat-item"><div class="stat-val" id="statMonths">0</div><div class="stat-label">月份数</div></div>
+	                            <div class="stat-item"><div class="stat-val" id="statRegions">0</div><div class="stat-label">地区数</div></div>
+	                            <div class="stat-item"><div class="stat-val" id="statCategories">0</div><div class="stat-label">货物分类数</div></div>
+	                            <div class="stat-item"><div class="stat-val" id="statRecords">0</div><div class="stat-label">数据记录数</div></div>
+	                        </div>
+	                    </div>
+	                </div>
+	                <div id="cloudLoadingHint" style="text-align:center;padding:12px;color:#e53935;font-size:0.9rem;font-weight:600;display:none;">云端数据读取中,请稉等<span class="dot-anim">.</span><span class="dot-anim" style="animation-delay:0.2s;">.</span><span class="dot-anim" style="animation-delay:0.4s;">.</span></div>
+	                <div style="text-align:center;margin:8px 0;">
+	                    <span id="detailToggleBtn" onclick="toggleDetailInfo()" style="cursor:pointer;color:#2c7da0;font-size:0.8rem;">展开详情 ▼</span>
+	                </div>
+	                <div id="detailInfoArea" style="display:none;">
+	                    <div style="margin-bottom:8px;"><div class="filter-label">已上传月份</div><div id="monthTags" class="tag-container"><span class="tag">暂无数据</span></div></div>
+	                    <div><div class="filter-label">涉及地区</div><div id="regionTags" class="tag-container"><span class="tag">暂无数据</span></div></div>
+	                    <div><div class="filter-label">集装箱数据月份 <span class="select-all" onclick="toggleAllIn('containerMonthCb')">全选/取消</span></div><div id="containerMonthCb" class="checkbox-grid"></div><button class="btn btn-red btn-sm" style="margin-top:8px;" onclick="deleteSelectedContainerMonths()">删除所选月份</button></div>
+	                </div>
+	            </div>
+	            <!-- 当月数据概述视图 -->
+	            <div id="monthlyOverviewBox" style="display:none;margin-top:14px;background:linear-gradient(135deg,#f0f7fb 0%,#e8f4f8 100%);border-radius:12px;padding:16px 20px;border:1px solid #d0e4ef;">
+	                <div id="monthlyOverviewText" style="font-size:0.82rem;line-height:1.9;color:#2a4a5a;"></div>
+	            </div>
+	        </div>
 
-        <div class="card">
-            <div class="card-title">� 已上传数据概览</div>
-            <div style="display:flex;gap:20px;flex-wrap:wrap;">
-                <div style="flex:1;min-width:240px;">
-                    <div class="stats-bar">
-                        <div class="stat-item"><div class="stat-val" id="statMonths">0</div><div class="stat-label">月份数</div></div>
-                        <div class="stat-item"><div class="stat-val" id="statRegions">0</div><div class="stat-label">地区数</div></div>
-                        <div class="stat-item"><div class="stat-val" id="statCategories">0</div><div class="stat-label">货物分类数</div></div>
-                        <div class="stat-item"><div class="stat-val" id="statRecords">0</div><div class="stat-label">数据记录数</div></div>
-                    </div>
-                </div>
-                <div id="monthlyOverviewBox" style="flex:1.6;min-width:320px;background:linear-gradient(135deg,#f0f7fb 0%,#e8f4f8 100%);border-radius:12px;padding:12px 16px;border:1px solid #d0e4ef;display:none;">
-                    <div style="font-size:0.85rem;font-weight:600;color:#1a3a4a;margin-bottom:6px;display:flex;align-items:center;gap:6px;"><span style="width:4px;height:16px;background:linear-gradient(180deg,#2c7da0 0%,#27775a 100%);border-radius:2px;display:inline-block;"></span>当月数据概述</div>
-                    <div id="monthlyOverviewText" style="font-size:0.8rem;line-height:1.85;color:#2a4a5a;"></div>
-                </div>
-            </div>
-            <div id="cloudLoadingHint" style="text-align:center;padding:12px;color:#e53935;font-size:0.9rem;font-weight:600;display:none;">云端数据读取中,请稍等<span class="dot-anim">.</span><span class="dot-anim" style="animation-delay:0.2s;">.</span><span class="dot-anim" style="animation-delay:0.4s;">.</span></div>
-            <div style="text-align:center;margin:8px 0;">
-                <span id="detailToggleBtn" onclick="toggleDetailInfo()" style="cursor:pointer;color:#2c7da0;font-size:0.8rem;">展开详情 ▼</span>
-            </div>
-            <div id="detailInfoArea" style="display:none;">
-                <div style="margin-bottom:8px;"><div class="filter-label">已上传月份</div><div id="monthTags" class="tag-container"><span class="tag">暂无数据</span></div></div>
-                <div><div class="filter-label">涉及地区</div><div id="regionTags" class="tag-container"><span class="tag">暂无数据</span></div></div>
-                <div><div class="filter-label">集装箱数据月份 <span class="select-all" onclick="toggleAllIn('containerMonthCb')">全选/取消</span></div><div id="containerMonthCb" class="checkbox-grid"></div><button class="btn btn-red btn-sm" style="margin-top:8px;" onclick="deleteSelectedContainerMonths()">删除所选月份</button></div>
-            </div>
-        </div>
-
-        <div class="trend-rank-section">
+		<div class="trend-rank-section">
             <div class="trend-card">
                 <div class="trend-title">湖州港历年货物吞吐量走势</div>
                 <div id="trendChart"></div>
@@ -1331,19 +1321,37 @@ function debugDBTotals() {
 
 function getUnique(field) { return [...new Set(allData.map(r => r[field]).filter(Boolean))].sort(); }
 
+function switchOverviewTab(tab) {
+    const statsArea = document.getElementById('overviewStatsArea');
+    const overviewBox = document.getElementById('monthlyOverviewBox');
+    const toggleBtn = document.getElementById('overviewToggleBtn');
+    if (!statsArea || !overviewBox || !toggleBtn) return;
+    if (tab === 'overview') {
+        statsArea.style.display = 'none';
+        overviewBox.style.display = 'block';
+        toggleBtn.textContent = '◀ 当月数据概述';
+        toggleBtn.style.background = '#2c7da0';
+        toggleBtn.style.color = '#fff';
+    } else {
+        statsArea.style.display = 'block';
+        overviewBox.style.display = 'none';
+        toggleBtn.textContent = '当月数据概述 ▶';
+        toggleBtn.style.background = '#edf5fa';
+        toggleBtn.style.color = '#2c7da0';
+    }
+}
+
 function computeMonthlyOverview() {
-    const box = document.getElementById('monthlyOverviewBox');
     const textEl = document.getElementById('monthlyOverviewText');
-    if (!box || !textEl) return;
+    if (!textEl) return;
     const periods = getUnique('period');
-    if (periods.length === 0) { box.style.display = 'none'; return; }
-    box.style.display = 'block';
+    if (periods.length === 0) { textEl.textContent = ''; return; }
 
     const latestPeriod = periods[periods.length - 1];
-    const [year, month] = latestPeriod.split('-');
+    const [year, mRaw] = latestPeriod.split('-');
     const prevYear = String(parseInt(year) - 1);
-    const prevPeriod = prevYear + '-' + month;
-    const monthNum = parseInt(month);
+    const prevPeriod = prevYear + '-' + mRaw;
+    const mDisplay = parseInt(mRaw);
 
     function getCargo(period, dir) {
         return allData
@@ -1356,9 +1364,19 @@ function computeMonthlyOverview() {
         return qs.length > 0 ? qs.reduce((s, r) => s + (r.value || 0), 0) : d.reduce((s, r) => s + (r.value || 0), 0);
     }
     function fmtYoy(v, lv) {
-        if (!lv || lv <= 0) return '无去年同期数据';
+        if (!lv || lv <= 0) return '无同期数据';
         const pct = ((v - lv) / lv) * 100;
         return (pct >= 0 ? '增加' : '下降') + Math.abs(pct).toFixed(1) + '%';
+    }
+    function fmtYoyPair(v1, lv1, v2, lv2) {
+        const p1 = lv1 > 0 ? ((v1 - lv1) / lv1) * 100 : null;
+        const p2 = lv2 > 0 ? ((v2 - lv2) / lv2) * 100 : null;
+        if (p1 === null && p2 === null) return '均无同期数据';
+        if (p1 === null) return (p2 >= 0 ? '增加' : '下降') + Math.abs(p2).toFixed(1) + '%';
+        if (p2 === null) return (p1 >= 0 ? '增加' : '下降') + Math.abs(p1).toFixed(1) + '%';
+        const s1 = p1 >= 0 ? '增加' : '下降', s2 = p2 >= 0 ? '增加' : '下降';
+        if (s1 === s2) return s1 + Math.abs(p1).toFixed(1) + '%和' + Math.abs(p2).toFixed(1) + '%';
+        return s1 + Math.abs(p1).toFixed(1) + '%和' + s2 + Math.abs(p2).toFixed(1) + '%';
     }
 
     // Single month
@@ -1373,7 +1391,7 @@ function computeMonthlyOverview() {
 
     // YTD
     const ytdM = [];
-    for (let m = 1; m <= monthNum; m++) { const mp = year + '-' + String(m).padStart(2, '0'); if (periods.includes(mp)) ytdM.push(mp); }
+    for (let m = 1; m <= mDisplay; m++) { const mp = year + '-' + String(m).padStart(2, '0'); if (periods.includes(mp)) ytdM.push(mp); }
     function sumC(dir) { return ytdM.reduce((s, p) => s + getCargo(p, dir), 0); }
     function sumCont() { return ytdM.reduce((s, p) => s + getCont(p), 0); }
     const ytdTot = sumC('总计'), ytdOut = sumC('出港'), ytdInp = sumC('进港'), ytdCont = sumCont();
@@ -1388,12 +1406,13 @@ function computeMonthlyOverview() {
     const ytdTWan = Math.round(ytdTot / 10000), ytdOWan = Math.round(ytdOut / 10000), ytdIWan = Math.round(ytdInp / 10000);
     const ytdCWan = (ytdCont / 10000).toFixed(1);
 
-    const yS = fmtYoy(tot, pTot), yOS = fmtYoy(out, pOut), yIS = fmtYoy(inp, pInp), yCS = fmtYoy(cont, pCont);
-    const ytdYS = fmtYoy(ytdTot, pYtdTot), ytdYOS = fmtYoy(ytdOut, pYtdOut), ytdYIS = fmtYoy(ytdInp, pYtdInp), ytdYCS = fmtYoy(ytdCont, pYtdCont);
+    const yS = fmtYoy(tot, pTot), yCS = fmtYoy(cont, pCont);
+    const ytdYS = fmtYoy(ytdTot, pYtdTot), ytdYCS = fmtYoy(ytdCont, pYtdCont);
+    const yoyPair = fmtYoyPair(out, pOut, inp, pInp);
+    const ytdYoyPair = fmtYoyPair(ytdOut, pYtdOut, ytdInp, pYtdInp);
 
-    textEl.textContent = `${year}年${month}月湖州港完成货物吞吐量${tWan}万吨，同比${yS}，其中出港${oWan}万吨、进港${iWan}万吨，同比分别${yOS}和${yIS}；完成集装箱吞吐量${cWan}万标箱，同比${yCS}。1-${month}月累计完成货物吞吐量${ytdTWan}万吨，同比${ytdYS},其中出港${ytdOWan}万吨、进港${ytdIWan}万吨，同比分别${ytdYOS}和${ytdYIS};完成集装箱吞吐量${ytdCWan}万标箱，同比${ytdYCS}`;
+    textEl.textContent = `${year}年${mDisplay}月湖州港完成货物吞吐量${tWan}万吨，同比${yS}，其中出港${oWan}万吨、进港${iWan}万吨，同比分别${yoyPair}；完成集装箱吞吐量${cWan}万标箱，同比${yCS}。1-${mDisplay}月累计完成货物吞吐量${ytdTWan}万吨，同比${ytdYS}，其中出港${ytdOWan}万吨、进港${ytdIWan}万吨，同比分别${ytdYoyPair}；完成集装箱吞吐量${ytdCWan}万标箱，同比${ytdYCS}。`;
 }
-
 function refreshOverview() {
     const months = getUnique('period'), regions = getUnique('region'), categories = getUnique('category');
     document.getElementById('statMonths').textContent = months.length;
