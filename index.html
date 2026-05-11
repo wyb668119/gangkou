@@ -193,11 +193,19 @@
 
         <div class="card">
             <div class="card-title">� 已上传数据概览</div>
-            <div class="stats-bar">
-                <div class="stat-item"><div class="stat-val" id="statMonths">0</div><div class="stat-label">月份数</div></div>
-                <div class="stat-item"><div class="stat-val" id="statRegions">0</div><div class="stat-label">地区数</div></div>
-                <div class="stat-item"><div class="stat-val" id="statCategories">0</div><div class="stat-label">货物分类数</div></div>
-                <div class="stat-item"><div class="stat-val" id="statRecords">0</div><div class="stat-label">数据记录数</div></div>
+            <div style="display:flex;gap:20px;flex-wrap:wrap;">
+                <div style="flex:1;min-width:240px;">
+                    <div class="stats-bar">
+                        <div class="stat-item"><div class="stat-val" id="statMonths">0</div><div class="stat-label">月份数</div></div>
+                        <div class="stat-item"><div class="stat-val" id="statRegions">0</div><div class="stat-label">地区数</div></div>
+                        <div class="stat-item"><div class="stat-val" id="statCategories">0</div><div class="stat-label">货物分类数</div></div>
+                        <div class="stat-item"><div class="stat-val" id="statRecords">0</div><div class="stat-label">数据记录数</div></div>
+                    </div>
+                </div>
+                <div id="monthlyOverviewBox" style="flex:1.6;min-width:320px;background:linear-gradient(135deg,#f0f7fb 0%,#e8f4f8 100%);border-radius:12px;padding:12px 16px;border:1px solid #d0e4ef;display:none;">
+                    <div style="font-size:0.85rem;font-weight:600;color:#1a3a4a;margin-bottom:6px;display:flex;align-items:center;gap:6px;"><span style="width:4px;height:16px;background:linear-gradient(180deg,#2c7da0 0%,#27775a 100%);border-radius:2px;display:inline-block;"></span>当月数据概述</div>
+                    <div id="monthlyOverviewText" style="font-size:0.8rem;line-height:1.85;color:#2a4a5a;"></div>
+                </div>
             </div>
             <div id="cloudLoadingHint" style="text-align:center;padding:12px;color:#e53935;font-size:0.9rem;font-weight:600;display:none;">云端数据读取中,请稍等<span class="dot-anim">.</span><span class="dot-anim" style="animation-delay:0.2s;">.</span><span class="dot-anim" style="animation-delay:0.4s;">.</span></div>
             <div style="text-align:center;margin:8px 0;">
@@ -1323,6 +1331,69 @@ function debugDBTotals() {
 
 function getUnique(field) { return [...new Set(allData.map(r => r[field]).filter(Boolean))].sort(); }
 
+function computeMonthlyOverview() {
+    const box = document.getElementById('monthlyOverviewBox');
+    const textEl = document.getElementById('monthlyOverviewText');
+    if (!box || !textEl) return;
+    const periods = getUnique('period');
+    if (periods.length === 0) { box.style.display = 'none'; return; }
+    box.style.display = 'block';
+
+    const latestPeriod = periods[periods.length - 1];
+    const [year, month] = latestPeriod.split('-');
+    const prevYear = String(parseInt(year) - 1);
+    const prevPeriod = prevYear + '-' + month;
+    const monthNum = parseInt(month);
+
+    function getCargo(period, dir) {
+        return allData
+            .filter(r => r.period === period && r.region === '全市' && r.direction === dir && r.tradeType === '合计' && r.category === '总计')
+            .reduce((s, r) => s + (r.value || 0), 0);
+    }
+    function getCont(period) {
+        const d = containerData.filter(r => r.period === period);
+        const qs = d.filter(r => r.region === '全市');
+        return qs.length > 0 ? qs.reduce((s, r) => s + (r.value || 0), 0) : d.reduce((s, r) => s + (r.value || 0), 0);
+    }
+    function fmtYoy(v, lv) {
+        if (!lv || lv <= 0) return '无去年同期数据';
+        const pct = ((v - lv) / lv) * 100;
+        return (pct >= 0 ? '增加' : '下降') + Math.abs(pct).toFixed(1) + '%';
+    }
+
+    // Single month
+    const tot = getCargo(latestPeriod, '总计');
+    const out = getCargo(latestPeriod, '出港');
+    const inp = getCargo(latestPeriod, '进港');
+    const cont = getCont(latestPeriod);
+    const pTot = getCargo(prevPeriod, '总计');
+    const pOut = getCargo(prevPeriod, '出港');
+    const pInp = getCargo(prevPeriod, '进港');
+    const pCont = getCont(prevPeriod);
+
+    // YTD
+    const ytdM = [];
+    for (let m = 1; m <= monthNum; m++) { const mp = year + '-' + String(m).padStart(2, '0'); if (periods.includes(mp)) ytdM.push(mp); }
+    function sumC(dir) { return ytdM.reduce((s, p) => s + getCargo(p, dir), 0); }
+    function sumCont() { return ytdM.reduce((s, p) => s + getCont(p), 0); }
+    const ytdTot = sumC('总计'), ytdOut = sumC('出港'), ytdInp = sumC('进港'), ytdCont = sumCont();
+
+    const pYtdM = ytdM.map(p => prevYear + '-' + p.split('-')[1]);
+    function sumPC(dir) { return pYtdM.reduce((s, p) => s + getCargo(p, dir), 0); }
+    function sumPCont() { return pYtdM.reduce((s, p) => s + getCont(p), 0); }
+    const pYtdTot = sumPC('总计'), pYtdOut = sumPC('出港'), pYtdInp = sumPC('进港'), pYtdCont = sumPCont();
+
+    const tWan = Math.round(tot / 10000), oWan = Math.round(out / 10000), iWan = Math.round(inp / 10000);
+    const cWan = (cont / 10000).toFixed(1);
+    const ytdTWan = Math.round(ytdTot / 10000), ytdOWan = Math.round(ytdOut / 10000), ytdIWan = Math.round(ytdInp / 10000);
+    const ytdCWan = (ytdCont / 10000).toFixed(1);
+
+    const yS = fmtYoy(tot, pTot), yOS = fmtYoy(out, pOut), yIS = fmtYoy(inp, pInp), yCS = fmtYoy(cont, pCont);
+    const ytdYS = fmtYoy(ytdTot, pYtdTot), ytdYOS = fmtYoy(ytdOut, pYtdOut), ytdYIS = fmtYoy(ytdInp, pYtdInp), ytdYCS = fmtYoy(ytdCont, pYtdCont);
+
+    textEl.textContent = `${year}年${month}月湖州港完成货物吞吐量${tWan}万吨，同比${yS}，其中出港${oWan}万吨、进港${iWan}万吨，同比分别${yOS}和${yIS}；完成集装箱吞吐量${cWan}万标箱，同比${yCS}。1-${month}月累计完成货物吞吐量${ytdTWan}万吨，同比${ytdYS},其中出港${ytdOWan}万吨、进港${ytdIWan}万吨，同比分别${ytdYOS}和${ytdYIS};完成集装箱吞吐量${ytdCWan}万标箱，同比${ytdYCS}`;
+}
+
 function refreshOverview() {
     const months = getUnique('period'), regions = getUnique('region'), categories = getUnique('category');
     document.getElementById('statMonths').textContent = months.length;
@@ -1343,6 +1414,7 @@ function refreshOverview() {
     renderCheckboxes('qRegionCb', regions); renderCheckboxes('qCategoryCb', categories); renderCheckboxes('qDirCb', DIRECTIONS); renderCheckboxes('qTradeCb', TRADE_TYPES);
     renderTplTabs();
     renderOverviewCharts();
+    computeMonthlyOverview();
 }
 
 function renderCheckboxes(id, items) { document.getElementById(id).innerHTML = items.map(i => `<label class="cb-item checked" onclick="toggleCb(this)"><input type="checkbox" value="${esc(i)}" checked>${esc(i)}</label>`).join(''); }
