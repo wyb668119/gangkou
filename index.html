@@ -158,9 +158,15 @@
         .province-indicator-table th {
             text-align: center !important;
             vertical-align: middle;
+        }
+        .province-indicator-table td {
             white-space: nowrap;
+            padding: 5px 10px;
         }
         .province-indicator-table th {
+            white-space: normal;
+            word-break: keep-all;
+            padding: 6px 10px;
             background: #eef4f8;
             font-weight: 600;
             color: #1a3a4a;
@@ -2690,7 +2696,7 @@ async function loadHistoricalTables() {
 async function handleProvinceIndicatorFile(file) {
     await ensureXLSX();
     const data = await file.arrayBuffer();
-    const wb = XLSX.read(data, { type: 'array' });
+    const wb = XLSX.read(data, { type: 'array', cellNF: true });
 
     const sheets = [];
     for (const sn of wb.SheetNames) {
@@ -2698,149 +2704,158 @@ async function handleProvinceIndicatorFile(file) {
         const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
         // Extract rows 1-15 (rows 1-15 in Excel = indices 0-14)
-        let indicatorRows = rows.slice(0, 15).map(row =>
-            row.map(cell => String(cell || '').trim())
-        );
+        let indicatorRows = rows.slice(0, 15).map(function(row) {
+            return row.map(function(cell) { return String(cell || '').trim(); });
+        });
 
         if (indicatorRows.length === 0) {
-            sheets.push({ name: sn, title: sn, rows: [], merges: {} });
+            sheets.push({ name: sn, title: sn, rows: [], merges: {}, pctCells: [] });
             continue;
         }
 
-        // Calculate max columns
-        let maxCols = 0;
+        // Calculate max columns and pad all rows
+        var maxCols = 0;
         indicatorRows.forEach(function(row) { if (row.length > maxCols) maxCols = row.length; });
-
-        // Pad all rows to same length
         indicatorRows = indicatorRows.map(function(row) {
-            const r = row.slice();
+            var r = row.slice();
             while (r.length < maxCols) r.push('');
             return r;
         });
 
-        // Remove completely blank columns (no content in any row within rows 0-14)
-        const colHasContent = {};
-        for (let ci = 0; ci < maxCols; ci++) {
+        // Detect percentage-formatted cells from original Excel cell formats
+        var pctOrigSet = {};
+        try {
+            var range = ws['!ref'] ? XLSX.utils.decode_range(ws['!ref']) : null;
+            if (range) {
+                for (var r = 0; r <= Math.min(range.e.r, 14); r++) {
+                    for (var c = 0; c <= range.e.c; c++) {
+                        var addr = XLSX.utils.encode_cell({ r: r, c: c });
+                        var cell = ws[addr];
+                        if (cell && cell.z && typeof cell.z === 'string' && cell.z.indexOf('%') !== -1) {
+                            pctOrigSet[r + ':' + c] = true;
+                        }
+                    }
+                }
+            }
+        } catch (e) {}
+
+        // Remove completely blank columns
+        var colHasContent = {};
+        for (var ci = 0; ci < maxCols; ci++) {
             colHasContent[ci] = false;
-            for (let ri = 0; ri < indicatorRows.length; ri++) {
+            for (var ri = 0; ri < indicatorRows.length; ri++) {
                 if (indicatorRows[ri][ci] && indicatorRows[ri][ci] !== '') {
                     colHasContent[ci] = true;
                     break;
                 }
             }
         }
-        // Build column reindex map
-        const oldToNew = {};
-        let newColIdx = 0;
-        for (let ci = 0; ci < maxCols; ci++) {
-            if (colHasContent[ci]) {
-                oldToNew[ci] = newColIdx++;
-            }
+        var oldToNew = {};
+        var newColIdx = 0;
+        for (var ci = 0; ci < maxCols; ci++) {
+            if (colHasContent[ci]) oldToNew[ci] = newColIdx++;
         }
-        // Remove blank columns from rows
-        const cleanedRows = indicatorRows.map(function(row) {
-            const newRow = [];
-            for (let ci = 0; ci < maxCols; ci++) {
+
+        // Clean rows: remove blank columns
+        var cleanedRows = indicatorRows.map(function(row) {
+            var newRow = [];
+            for (var ci = 0; ci < maxCols; ci++) {
                 if (colHasContent[ci]) newRow.push(row[ci]);
             }
             return newRow;
         });
 
-        // Parse merged cells info, adjusting for removed columns
-        const merges = ws['!merges'] || [];
-        const mergeMap = {};
+        // Remap percentage cell keys with new column indices
+        var pctCells = [];
+        for (var key in pctOrigSet) {
+            var parts = key.split(':');
+            var r = parseInt(parts[0]), c = parseInt(parts[1]);
+            if (colHasContent[c]) pctCells.push(r + ':' + oldToNew[c]);
+        }
+
+        // Parse merged cells, adjusting for removed columns
+        var merges = ws['!merges'] || [];
+        var mergeMap = {};
         merges.forEach(function(m) {
             if (m.s.r > 14) return;
-            // Check if the merge's top-left column still exists
             if (!colHasContent[m.s.c]) return;
-            // If any cell in the merge range has a column that was removed,
-            // we need to skip this merge (it would be malformed)
-            let validMerge = true;
-            for (let c = m.s.c; c <= m.e.c; c++) {
-                if (!colHasContent[c]) { validMerge = false; break; }
-            }
-            if (!validMerge) return;
-
-            const endR = Math.min(m.e.r, 14);
-            const newStartC = oldToNew[m.s.c];
-            const newEndC = oldToNew[m.e.c];
-            const colspan = newEndC - newStartC + 1;
-
-            // Store merge info at the top-left cell (using new column index)
+            // Validate all columns in merge range exist after cleanup
+            for (var c = m.s.c; c <= m.e.c; c++) { if (!colHasContent[c]) return; }
+            var endR = Math.min(m.e.r, 14);
+            var newStartC = oldToNew[m.s.c];
+            var newEndC = oldToNew[m.e.c];
+            var colspan = newEndC - newStartC + 1;
             mergeMap[m.s.r + ':' + newStartC] = { rowspan: endR - m.s.r + 1, colspan: colspan };
-            // Mark all other cells in the merge range as skip
-            for (let r = m.s.r; r <= endR; r++) {
-                for (let c = newStartC; c <= newEndC; c++) {
+            for (var r = m.s.r; r <= endR; r++) {
+                for (var c = newStartC; c <= newEndC; c++) {
                     if (r === m.s.r && c === newStartC) continue;
                     mergeMap[r + ':' + c] = { skip: true };
                 }
             }
         });
 
-        // Try to extract title from first non-empty cell
-        let title = sn;
-        for (let i = 0; i < cleanedRows.length && i < 3; i++) {
-            for (let j = 0; j < cleanedRows[i].length; j++) {
+        // Extract title from first non-empty cell
+        var title = sn;
+        for (var i = 0; i < cleanedRows.length && i < 3; i++) {
+            for (var j = 0; j < cleanedRows[i].length; j++) {
                 if (cleanedRows[i][j]) { title = cleanedRows[i][j].slice(0, 80); break; }
             }
             if (title !== sn) break;
         }
 
-        sheets.push({ name: sn, title, rows: cleanedRows, merges: mergeMap });
+        sheets.push({ name: sn, title: title, rows: cleanedRows, merges: mergeMap, pctCells: pctCells });
     }
 
-    provinceIndicatorsData = { sheets, fileName: file.name };
+    provinceIndicatorsData = { sheets: sheets, fileName: file.name };
     activeProvinceIndicatorIdx = sheets.length > 0 ? 0 : -1;
 
-    // Save to cloud — show error if fails
-    try {
-        await saveProvinceIndicatorsToCloud(provinceIndicatorsData);
-    } catch (e) {
-        console.error('保存全省港口指标到云端失败:', e);
-    }
+    // Save to cloud only — no local fallback
+    await saveProvinceIndicatorsToCloud(provinceIndicatorsData);
     renderProvinceIndicators();
     showMessage('已解析 "' + file.name + '"，共 ' + sheets.length + ' 个工作表', 'success');
 }
 
 async function saveProvinceIndicatorsToCloud(data) {
-    const url = SUPABASE_URL + '/rest/v1/' + PROVINCE_INDICATOR_TABLE + '?on_conflict=id';
-    const resp = await fetch(url, {
+    var url = SUPABASE_URL + '/rest/v1/' + PROVINCE_INDICATOR_TABLE + '?on_conflict=id';
+    var resp = await fetch(url, {
         method: 'POST',
         headers: sbHeaders({ 'Prefer': 'return=minimal,resolution=merge-duplicates' }),
         body: JSON.stringify([{ id: 1, data: JSON.stringify(data) }])
     });
     if (!resp.ok) {
-        const errText = await resp.text();
+        var errText = await resp.text();
         throw new Error('保存失败(' + resp.status + '): ' + errText);
     }
 }
 
 async function loadProvinceIndicatorsFromCloud() {
+    var loadedFromCloud = false;
     try {
-        const url = SUPABASE_URL + '/rest/v1/' + PROVINCE_INDICATOR_TABLE + '?select=data&id=eq.1';
-        const resp = await fetch(url, { headers: sbHeaders() });
-        if (!resp.ok) {
-            // Table may not exist yet — that's ok
-            return;
-        }
-        const rows = await resp.json();
-        if (rows.length && rows[0].data) {
-            const parsed = typeof rows[0].data === 'string' ? JSON.parse(rows[0].data) : rows[0].data;
-            if (parsed && parsed.sheets && parsed.sheets.length > 0) {
-                provinceIndicatorsData = parsed;
-                activeProvinceIndicatorIdx = 0;
-                console.log('Loaded province indicators:', provinceIndicatorsData.sheets.length, 'sheets');
-                renderProvinceIndicators();
+        var url = SUPABASE_URL + '/rest/v1/' + PROVINCE_INDICATOR_TABLE + '?select=data&id=eq.1';
+        var resp = await fetch(url, { headers: sbHeaders() });
+        if (resp.ok) {
+            var rows = await resp.json();
+            if (rows.length && rows[0].data) {
+                var parsed = typeof rows[0].data === 'string' ? JSON.parse(rows[0].data) : rows[0].data;
+                if (parsed && parsed.sheets && parsed.sheets.length > 0) {
+                    provinceIndicatorsData = parsed;
+                    activeProvinceIndicatorIdx = 0;
+                    loadedFromCloud = true;
+                }
             }
         }
     } catch (e) {
-        console.warn('加载全省港口指标数据失败:', e);
+        console.error('云端加载失败:', e);
+    }
+
+    if (activeProvinceIndicatorIdx >= 0) {
+        renderProvinceIndicators();
     }
 }
 
 function renderProvinceIndicators() {
-    const emptyEl = document.getElementById('provinceIndicatorEmpty');
-    const contentEl = document.getElementById('provinceIndicatorContent');
+    var emptyEl = document.getElementById('provinceIndicatorEmpty');
+    var contentEl = document.getElementById('provinceIndicatorContent');
 
     if (!provinceIndicatorsData.sheets || provinceIndicatorsData.sheets.length === 0) {
         if (emptyEl) emptyEl.style.display = 'block';
@@ -2856,13 +2871,13 @@ function renderProvinceIndicators() {
 }
 
 function renderProvinceIndicatorTabs() {
-    const container = document.getElementById('provinceIndicatorTabs');
+    var container = document.getElementById('provinceIndicatorTabs');
     if (!container) return;
-    let html = '';
+    var html = '';
     provinceIndicatorsData.sheets.forEach(function(sheet, i) {
-        const active = i === activeProvinceIndicatorIdx ? ' active' : '';
-        const label = sheet.name || ('表' + (i+1));
-        html += '<div class="tpl-tab' + active + '" onclick="switchProvinceIndicatorTab(' + i + ')">' + esc(label) + '</div>';
+        var activeClass = i === activeProvinceIndicatorIdx ? ' active' : '';
+        var label = sheet.name || ('表' + (i+1));
+        html += '<div class="tpl-tab' + activeClass + '" onclick="switchProvinceIndicatorTab(' + i + ')">' + esc(label) + '</div>';
     });
     container.innerHTML = html;
 }
@@ -2877,8 +2892,6 @@ function switchProvinceIndicatorTab(idx) {
 function fmtIndicatorNum(val) {
     var num = parseFloat(val);
     if (isNaN(num)) return val;
-    // If original had decimal point and ends with .00 or similar, preserve formatting
-    // Don't add .00 to whole numbers
     if (Number.isInteger(num)) return num.toString();
     return num.toFixed(2);
 }
@@ -2896,19 +2909,24 @@ function renderProvinceIndicatorTable() {
 
     var rows = sheet.rows;
     var merges = sheet.merges || {};
+    var pctSet = {};
+    if (sheet.pctCells) {
+        for (var pi = 0; pi < sheet.pctCells.length; pi++) {
+            pctSet[sheet.pctCells[pi]] = true;
+        }
+    }
     if (!rows || rows.length === 0) {
         thead.innerHTML = '';
         tbody.innerHTML = '<tr><td class="no-data" colspan="99">空表格</td></tr>';
         return;
     }
 
-    // Calculate max column count (should already be uniform after cleaning)
     var maxCols = 0;
     for (var ri = 0; ri < rows.length; ri++) {
         if (rows[ri].length > maxCols) maxCols = rows[ri].length;
     }
 
-    // Find first data row: row where >50% of non-empty cells are numeric
+    // Find first data row (>50% numeric)
     var firstDataRow = rows.length;
     for (var ri = 0; ri < rows.length; ri++) {
         var nonEmpty = [];
@@ -2927,7 +2945,6 @@ function renderProvinceIndicatorTable() {
         }
     }
 
-    // Put all rows in tbody to preserve original Excel row order
     thead.innerHTML = '';
     var bodyHtml = '';
     for (var ri = 0; ri < rows.length; ri++) {
@@ -2946,16 +2963,18 @@ function renderProvinceIndicatorTable() {
             var val = (ci < row.length) ? row[ci] : '';
             var tag = isHeader ? 'th' : 'td';
 
-            // Merge attributes
             var mergeAttrs = '';
             if (merges[key]) {
                 mergeAttrs = ' rowspan="' + merges[key].rowspan + '" colspan="' + merges[key].colspan + '"';
             }
 
-            // Format numeric values (only in data rows)
             var displayVal = val;
             if (!isHeader && val !== '' && !isNaN(parseFloat(val)) && isFinite(parseFloat(val))) {
                 displayVal = fmtIndicatorNum(val);
+                // Add % sign for percentage-formatted cells
+                if (pctSet[key]) {
+                    displayVal = displayVal + '%';
+                }
             }
 
             bodyHtml += '<' + tag + mergeAttrs + '>' + esc(displayVal) + '</' + tag + '>';
@@ -2982,7 +3001,6 @@ async function exportProvinceIndicatorTable() {
     XLSX.writeFile(wb, baseName + '_' + (sheet.name || '') + '.xlsx');
     showMessage('已导出 "' + sheet.title + '"', 'success');
 }
-
 function renderHistoricalTable() {
     if (activeHistoricalIdx < 0 || activeHistoricalIdx >= historicalTables.length) return;
     const table = historicalTables[activeHistoricalIdx];
