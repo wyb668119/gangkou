@@ -2816,10 +2816,16 @@ async function handleProvinceIndicatorFile(file) {
 }
 
 async function saveProvinceIndicatorsToCloud(data) {
-    var url = SUPABASE_URL + '/rest/v1/' + PROVINCE_INDICATOR_TABLE + '?on_conflict=id';
-    var resp = await fetch(url, {
+    // Use DELETE + INSERT instead of UPSERT to avoid RLS policy conflicts
+    var deleteUrl = SUPABASE_URL + '/rest/v1/' + PROVINCE_INDICATOR_TABLE + '?id=eq.1';
+    await fetch(deleteUrl, {
+        method: 'DELETE',
+        headers: sbHeaders({ 'Prefer': 'return=minimal' })
+    });
+    var insertUrl = SUPABASE_URL + '/rest/v1/' + PROVINCE_INDICATOR_TABLE;
+    var resp = await fetch(insertUrl, {
         method: 'POST',
-        headers: sbHeaders({ 'Prefer': 'return=minimal,resolution=merge-duplicates' }),
+        headers: sbHeaders({ 'Prefer': 'return=minimal' }),
         body: JSON.stringify([{ id: 1, data: JSON.stringify(data) }])
     });
     if (!resp.ok) {
