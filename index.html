@@ -426,7 +426,6 @@ const CONTAINER_TABLE = 'gangkou_container_data';
 const TEMPLATE_TABLE = 'gangkou_templates';
 const PROVINCE_TABLE = 'province_port_data';
 const HISTORICAL_TABLE = 'gangkou_historical_blob';
-const PROVINCE_INDICATOR_TABLE = 'gangkou_province_indicators';
 const MAX_TEMPLATES = 10;
 const KNOWN_REGIONS = ['全市', '吴兴区', '南浔区', '长兴县', '德清县', '安吉县', '南太湖新区'];
 const DIRECTIONS = ['总计', '出港', '进港'];
@@ -2970,11 +2969,11 @@ function renderProvinceIndicatorTable() {
 
             var displayVal = val;
             if (!isHeader && val !== '' && !isNaN(parseFloat(val)) && isFinite(parseFloat(val))) {
-                displayVal = fmtIndicatorNum(val);
-                // Add % sign for percentage-formatted cells
-                if (pctSet[key]) {
-                    displayVal = displayVal + '%';
-                }
+                var num = parseFloat(val);
+                // Excel stores percentages as decimals (102% → 1.02), ×100 for display
+                if (pctSet[key]) num = num * 100;
+                displayVal = fmtIndicatorNum(num);
+                if (pctSet[key]) displayVal = displayVal + '%';
             }
 
             bodyHtml += '<' + tag + mergeAttrs + '>' + esc(displayVal) + '</' + tag + '>';
