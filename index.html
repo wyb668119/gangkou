@@ -301,7 +301,18 @@
             </div>
         </div>
 
-	        <div class="card">
+	                <div class="card">
+            <div class="card-title">📊 全省港口生产指标一览表</div>
+            <div id="provinceIndicatorEmpty" style="text-align:center;color:#8ba0b5;padding:20px;font-size:0.82rem;">暂无数据，请通过排行榜模块的上传按钮上传Excel文件</div>
+            <div id="provinceIndicatorContent" style="display:none;">
+                <div class="tpl-tabs" id="provinceIndicatorTabs"></div>
+                <div id="provinceIndicatorTableArea" style="display:none;">
+                    <div class="table-wrapper"><table id="provinceIndicatorTable"><thead id="provinceIndicatorHead"></thead><tbody id="provinceIndicatorBody"></tbody></table></div>
+                </div>
+            </div>
+        </div>
+
+<div class="card">
 	            <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid #eef2f7;margin-bottom:10px;">
 	                <div style="font-size:0.88rem;font-weight:600;color:#1a3a4a;display:flex;align-items:center;gap:6px;">📊 历年港口统计资料</div>
 	                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -380,6 +391,7 @@ const CONTAINER_TABLE = 'gangkou_container_data';
 const TEMPLATE_TABLE = 'gangkou_templates';
 const PROVINCE_TABLE = 'province_port_data';
 const HISTORICAL_TABLE = 'gangkou_historical_blob';
+const PROVINCE_INDICATOR_TABLE = 'gangkou_province_indicators';
 const MAX_TEMPLATES = 10;
 const KNOWN_REGIONS = ['全市', '吴兴区', '南浔区', '长兴县', '德清县', '安吉县', '南太湖新区'];
 const DIRECTIONS = ['总计', '出港', '进港'];
@@ -422,6 +434,8 @@ let historicalTables = [];
 let activeHistoricalIdx = -1;
 let histFileSelected = null;
 let currentAdmin = null;
+let provinceIndicatorsData = { sheets: [], fileName: '' };
+let activeProvinceIndicatorIdx = -1;
 
 function sbHeaders(extra = {}) {
     return {
@@ -1063,7 +1077,19 @@ async function authThenHistPickFile() {
 async function handleProvinceFileUpload(input) {
     const file = input.files[0];
     if (!file) return;
-    
+
+    // Check if this is the new "浙江省港口生产主要统计指标" format
+    if (file.name.includes('浙江省港口生产主要统计指标')) {
+        try {
+            await handleProvinceIndicatorFile(file);
+        } catch (e) {
+            showMessage('解析全省港口指标失败: ' + e.message, 'error');
+        }
+        input.value = '';
+        return;
+    }
+
+    // Existing province ranking handling
     try {
         const records = await parseProvinceExcelFile(file);
         if (records.length === 0) {
@@ -2631,6 +2657,143 @@ async function loadHistoricalTables() {
     } catch (e) { console.warn('加载历年表格失败:', e); }
 }
 
+// ── 全省港口生产指标一览表 ──
+async function handleProvinceIndicatorFile(file) {
+    await ensureXLSX();
+    const data = await file.arrayBuffer();
+    const wb = XLSX.read(data, { type: 'array' });
+
+    const sheets = [];
+    for (const sn of wb.SheetNames) {
+        const ws = wb.Sheets[sn];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+        // Extract rows 1-15 (rows 1-15 in Excel = indices 0-14)
+        const indicatorRows = rows.slice(0, 15).map(row =>
+            row.map(cell => String(cell || '').trim())
+        );
+
+        // Try to extract title from first non-empty cell
+        let title = sn;
+        for (let i = 0; i < indicatorRows.length && i < 3; i++) {
+            for (let j = 0; j < indicatorRows[i].length; j++) {
+                if (indicatorRows[i][j]) { title = indicatorRows[i][j].slice(0, 80); break; }
+            }
+            if (title !== sn) break;
+        }
+
+        sheets.push({ name: sn, title, rows: indicatorRows });
+    }
+
+    provinceIndicatorsData = { sheets, fileName: file.name };
+    activeProvinceIndicatorIdx = sheets.length > 0 ? 0 : -1;
+
+    await saveProvinceIndicatorsToCloud(provinceIndicatorsData);
+    renderProvinceIndicators();
+    showMessage(`✅ 已解析「${file.name}」，共 ${sheets.length} 个工作表`, 'success');
+}
+
+async function saveProvinceIndicatorsToCloud(data) {
+    try {
+        const url = `${SUPABASE_URL}/rest/v1/${PROVINCE_INDICATOR_TABLE}?on_conflict=id`;
+        await fetch(url, {
+            method: 'POST',
+            headers: sbHeaders({ 'Prefer': 'return=minimal,resolution=merge-duplicates' }),
+            body: JSON.stringify([{ id: 1, data: JSON.stringify(data) }])
+        });
+    } catch (e) { console.warn('保存全省港口指标数据失败:', e); }
+}
+
+async function loadProvinceIndicatorsFromCloud() {
+    try {
+        const url = `${SUPABASE_URL}/rest/v1/${PROVINCE_INDICATOR_TABLE}?select=data&id=eq.1`;
+        const resp = await fetch(url, { headers: sbHeaders() });
+        if (!resp.ok) return;
+        const rows = await resp.json();
+        if (rows.length && rows[0].data) {
+            const parsed = typeof rows[0].data === 'string' ? JSON.parse(rows[0].data) : rows[0].data;
+            if (parsed && parsed.sheets && parsed.sheets.length > 0) {
+                provinceIndicatorsData = parsed;
+                activeProvinceIndicatorIdx = 0;
+                renderProvinceIndicators();
+            }
+        }
+    } catch (e) { console.warn('加载全省港口指标数据失败:', e); }
+}
+
+function renderProvinceIndicators() {
+    const emptyEl = document.getElementById('provinceIndicatorEmpty');
+    const contentEl = document.getElementById('provinceIndicatorContent');
+
+    if (!provinceIndicatorsData.sheets || provinceIndicatorsData.sheets.length === 0) {
+        if (emptyEl) emptyEl.style.display = 'block';
+        if (contentEl) contentEl.style.display = 'none';
+        return;
+    }
+
+    if (emptyEl) emptyEl.style.display = 'none';
+    if (contentEl) contentEl.style.display = 'block';
+
+    renderProvinceIndicatorTabs();
+    renderProvinceIndicatorTable();
+}
+
+function renderProvinceIndicatorTabs() {
+    const container = document.getElementById('provinceIndicatorTabs');
+    if (!container) return;
+    let html = '';
+    provinceIndicatorsData.sheets.forEach((sheet, i) => {
+        const active = i === activeProvinceIndicatorIdx ? ' active' : '';
+        const label = sheet.name || `表${i+1}`;
+        html += `<div class="tpl-tab${active}" onclick="switchProvinceIndicatorTab(${i})">${esc(label)}</div>`;
+    });
+    container.innerHTML = html;
+}
+
+function switchProvinceIndicatorTab(idx) {
+    if (activeProvinceIndicatorIdx === idx) return;
+    activeProvinceIndicatorIdx = idx;
+    renderProvinceIndicatorTabs();
+    renderProvinceIndicatorTable();
+}
+
+function renderProvinceIndicatorTable() {
+    if (activeProvinceIndicatorIdx < 0 || activeProvinceIndicatorIdx >= provinceIndicatorsData.sheets.length) return;
+
+    const sheet = provinceIndicatorsData.sheets[activeProvinceIndicatorIdx];
+    const thead = document.getElementById('provinceIndicatorHead');
+    const tbody = document.getElementById('provinceIndicatorBody');
+    const tableArea = document.getElementById('provinceIndicatorTableArea');
+
+    if (!thead || !tbody) return;
+    if (tableArea) tableArea.style.display = 'block';
+
+    const rows = sheet.rows;
+    if (!rows || rows.length === 0) {
+        thead.innerHTML = '';
+        tbody.innerHTML = '<tr><td class="no-data" colspan="99">空表格</td></tr>';
+        return;
+    }
+
+    // Calculate max column count
+    let maxCols = 0;
+    rows.forEach(row => { if (row.length > maxCols) maxCols = row.length; });
+
+    // Put all rows in tbody to preserve original Excel row order (like historical tables)
+    thead.innerHTML = '';
+    let bodyHtml = '';
+    rows.forEach((row, ri) => {
+        bodyHtml += '<tr>';
+        for (let ci = 0; ci < maxCols; ci++) {
+            const val = row[ci] || '';
+            const isNum = val !== '' && !isNaN(parseFloat(val)) && isFinite(val);
+            bodyHtml += `<td class="${isNum ? 'num' : ''}">${esc(val)}</td>`;
+        }
+        bodyHtml += '</tr>';
+    });
+    tbody.innerHTML = bodyHtml || '<tr><td class="no-data" colspan="99">空表格</td></tr>';
+}
+
 function renderHistoricalTable() {
     if (activeHistoricalIdx < 0 || activeHistoricalIdx >= historicalTables.length) return;
     const table = historicalTables[activeHistoricalIdx];
@@ -2874,6 +3037,7 @@ document.getElementById('modeSelect').addEventListener('change', function() { do
         refreshOverview();
         renderTplTabs();
         loadHistoricalTables();
+        loadProvinceIndicatorsFromCloud();
         supabaseGetCategoryCount().then(cnt => {
             const countInfo = cnt >= 0 ? `，共 ${cnt} 条记录` : '';
             showMessage(`✅ Supabase 云端已连接${countInfo}`, 'success');
@@ -2884,6 +3048,7 @@ document.getElementById('modeSelect').addEventListener('change', function() { do
         refreshOverview();
         renderTplTabs();
         loadHistoricalTables();
+        loadProvinceIndicatorsFromCloud();
         showMessage('⚠️ Supabase 连接失败: ' + e.message, 'error');
     } finally {
         updateLoading(100, '加载完成');
