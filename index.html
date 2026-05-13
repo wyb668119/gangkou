@@ -2816,33 +2816,27 @@ async function handleProvinceIndicatorFile(file) {
 }
 
 async function saveProvinceIndicatorsToCloud(data) {
-    // Use DELETE + INSERT instead of UPSERT to avoid RLS policy conflicts
-    var deleteUrl = SUPABASE_URL + '/rest/v1/' + PROVINCE_INDICATOR_TABLE + '?id=eq.1';
-    await fetch(deleteUrl, {
-        method: 'DELETE',
-        headers: sbHeaders({ 'Prefer': 'return=minimal' })
-    });
-    var insertUrl = SUPABASE_URL + '/rest/v1/' + PROVINCE_INDICATOR_TABLE;
-    var resp = await fetch(insertUrl, {
-        method: 'POST',
-        headers: sbHeaders({ 'Prefer': 'return=minimal' }),
-        body: JSON.stringify([{ id: 1, data: JSON.stringify(data) }])
-    });
-    if (!resp.ok) {
-        var errText = await resp.text();
-        throw new Error('保存失败(' + resp.status + '): ' + errText);
-    }
+    // Store in the existing gangkou_data table (confirmed working with anon RLS)
+    var encodedRecord = {
+        id: '__PROVINCE_INDICATOR__main',
+        district: JSON.stringify(data),
+        company_code: '__PROVINCE_INDICATOR__',
+        dock_name: '__全省港口生产指标__',
+        period: new Date().toISOString().slice(0, 7),
+        monthly_tonnage: 0
+    };
+    await supabaseUpsert([encodedRecord]);
 }
 
 async function loadProvinceIndicatorsFromCloud() {
     var loadedFromCloud = false;
     try {
-        var url = SUPABASE_URL + '/rest/v1/' + PROVINCE_INDICATOR_TABLE + '?select=data&id=eq.1';
+        var url = SUPABASE_URL + '/rest/v1/' + TABLE_NAME + '?company_code=eq.__PROVINCE_INDICATOR__&select=district';
         var resp = await fetch(url, { headers: sbHeaders() });
         if (resp.ok) {
             var rows = await resp.json();
-            if (rows.length && rows[0].data) {
-                var parsed = typeof rows[0].data === 'string' ? JSON.parse(rows[0].data) : rows[0].data;
+            if (rows.length && rows[0].district) {
+                var parsed = typeof rows[0].district === 'string' ? JSON.parse(rows[0].district) : rows[0].district;
                 if (parsed && parsed.sheets && parsed.sheets.length > 0) {
                     provinceIndicatorsData = parsed;
                     activeProvinceIndicatorIdx = 0;
