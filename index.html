@@ -180,6 +180,42 @@
             color: #1a3a4a;
             font-size: 0.88rem;
         }
+
+        /* ── 手机端响应式 ── */
+        @media (max-width: 768px) {
+            body { padding: 6px; }
+            .app { max-width: 100%; }
+            .header { padding: 14px 16px; border-radius: 14px 14px 0 0; }
+            .header h1 { font-size: 1.1rem; }
+            .header-nav a { font-size: 0.85rem; padding: 8px 16px; }
+            .main { padding: 12px 10px 16px; border-radius: 0 0 14px 14px; }
+            .card { padding: 10px 12px; margin-bottom: 10px; border-radius: 12px; }
+            .card-title { font-size: 0.82rem; }
+            .card:first-of-type, .action-bar .btn-green, .action-bar .btn-orange { display: none !important; }
+            .card:nth-of-type(6) { display: none !important; }
+            .filter-grid { grid-template-columns: 1fr; }
+            .overview-grid { grid-template-columns: 1fr; }
+            .trend-rank-section { grid-template-columns: 1fr; }
+            .chart-box canvas { max-height: 200px; }
+            #trendChart { height: 200px !important; }
+            table { font-size: 0.7rem; }
+            th, td { padding: 5px 4px; }
+            .btn { padding: 6px 14px; font-size: 0.75rem; }
+            .btn-sm { padding: 4px 10px; }
+            .stats-bar { gap: 5px; }
+            .stat-item { padding: 6px 10px; min-width: 70px; }
+            .stat-item .stat-val { font-size: 0.95rem; }
+            .upload-area { gap: 6px; }
+            .period-row select, .period-row input { font-size: 0.72rem; }
+            .checkbox-grid { gap: 2px; }
+            .cb-item { font-size: 0.7rem; padding: 2px 8px; }
+            .tpl-tab { font-size: 0.7rem; padding: 5px 10px; }
+            .header .sub { font-size: 0.7rem; }
+            #clearAllBtn { display: none !important; }
+            #exportBackupBtn, #importBackup + .btn { display: none !important; }
+            #tplEditorArea { display: none !important; }
+            #tplResultArea .action-bar .btn-green { display: none !important; }
+        }
     </style>
     <link rel="preload" href="lib/echarts.min.js" as="script">
     <link rel="preload" href="lib/chart.umd.min.js" as="script">
