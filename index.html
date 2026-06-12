@@ -1106,7 +1106,17 @@ function toggleDetailInfo() {
     }
 }
 
-function showMessage(msg, type) { const d = document.getElementById('uploadMsg'); d.className = 'msg-area msg-' + (type || 'success'); d.textContent = msg; setTimeout(() => { d.textContent = ''; }, 8000); }
+let uploadMessageTimer = null;
+function showMessage(msg, type) {
+    const d = document.getElementById('uploadMsg');
+    d.className = 'msg-area msg-' + (type || 'success');
+    d.textContent = msg;
+    if (uploadMessageTimer) clearTimeout(uploadMessageTimer);
+    uploadMessageTimer = setTimeout(() => {
+        d.textContent = '';
+        uploadMessageTimer = null;
+    }, 8000);
+}
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
 function fmtNum(n) { if (n === null || n === undefined) return '-'; if (typeof n === 'string') return n; return Number.isInteger(n) ? n.toLocaleString('zh-CN') : n.toLocaleString('zh-CN', {maximumFractionDigits:2}); }
 function safeNum(v) { if (v === null || v === undefined || v === '' || v === '-') return null; if (typeof v === 'number') return isNaN(v) ? null : v; const s = String(v).replace(/[,，\s%％]/g, ''); const n = parseFloat(s); return isNaN(n) ? null : n; }
@@ -1148,13 +1158,49 @@ async function handleProvinceFileUpload(input) {
     const file = input.files[0];
     if (!file) return;
 
-    // Check if this is the new "浙江省港口生产主要统计指标" format
+    // New "浙江省港口生产主要统计指标" files should refresh both displays:
+    // 1) the original indicator-table preview, and 2) the ranking data parsed from city rows.
     if (file.name.includes('浙江省港口生产主要统计指标')) {
+        let indicatorUpdated = false;
+        let rankUpdated = false;
+        let rankRecordCount = 0;
+        const errors = [];
+
         try {
             await handleProvinceIndicatorFile(file);
+            indicatorUpdated = true;
         } catch (e) {
-            showMessage('解析全省港口指标失败: ' + e.message, 'error');
+            errors.push('指标表解析失败: ' + e.message);
         }
+
+        try {
+            const records = await parseProvinceExcelFile(file);
+            rankRecordCount = records.length;
+            if (records.length > 0) {
+                await saveProvinceDataToCloud(records);
+                const loaded = await loadProvinceDataFromCloud();
+                if (loaded) {
+                    initRankPeriodSelects();
+                    updateRankList();
+                    rankUpdated = true;
+                } else {
+                    errors.push('排行榜数据已保存，但刷新失败，请刷新页面后查看');
+                }
+            } else {
+                errors.push('排行榜未识别到城市吞吐量数据，请检查Excel中城市行和吞吐量列格式');
+            }
+        } catch (e) {
+            errors.push('排行榜同步失败: ' + e.message);
+        }
+
+        if (indicatorUpdated && rankUpdated) {
+            showMessage('✅ 已更新全省港口生产指标一览表，并同步更新排行榜 ' + rankRecordCount + ' 条数据', 'success');
+        } else if (indicatorUpdated || rankUpdated) {
+            showMessage((indicatorUpdated ? '指标表已更新' : '排行榜已更新') + '；' + errors.join('；'), 'warning');
+        } else {
+            showMessage(errors.join('；') || '未解析到有效数据', 'error');
+        }
+
         input.value = '';
         return;
     }
@@ -1164,21 +1210,22 @@ async function handleProvinceFileUpload(input) {
         const records = await parseProvinceExcelFile(file);
         if (records.length === 0) {
             showMessage('未解析到有效的省港口数据，请检查Excel格式', 'error');
+            input.value = '';
             return;
         }
-        
+
         await saveProvinceDataToCloud(records);
         await loadProvinceDataFromCloud();
         initRankPeriodSelects();
         updateRankList();
-        
+
         const years = Object.keys(provincePortData);
         const months = years.length > 0 ? Object.keys(provincePortData[years[0]].monthly || {}) : [];
         showMessage(`✅ 成功解析 ${records.length} 条省港口数据（${years.join(', ')}年）`, 'success');
     } catch (e) {
         showMessage('上传省港口数据失败: ' + e.message, 'error');
     }
-    
+
     input.value = '';
 }
 
