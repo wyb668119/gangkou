@@ -661,6 +661,36 @@ async function saveCargoDataToCloud(records) {
     return savedCount;
 }
 
+function getContainerPersistenceProblems(expectedRecords, actualRecords) {
+    const actualMap = new Map();
+    (actualRecords || []).forEach(r => {
+        const period = String(r.period || '').trim();
+        const region = String(r.region || '').trim();
+        const indicator = String(r.indicator || '集装箱吞吐量(箱数)').trim();
+        actualMap.set(`${period}|${region}|${indicator}`, Number(r.value) || 0);
+    });
+    const expectedMap = new Map();
+    (expectedRecords || []).forEach(r => {
+        const period = String(r.period || '').trim();
+        const region = String(r.region || '').trim();
+        const indicator = String(r.indicator || '集装箱吞吐量(箱数)').trim();
+        expectedMap.set(`${period}|${region}|${indicator}`, { period, region, indicator, value: Number(r.value) || 0 });
+    });
+    const problems = [];
+    expectedMap.forEach(r => {
+        const key = `${r.period}|${r.region}|${r.indicator}`;
+        if (!actualMap.has(key)) {
+            problems.push(`${r.period} ${r.region}: 缺失`);
+            return;
+        }
+        const actualValue = actualMap.get(key);
+        if (Math.abs(actualValue - r.value) > 0.0001) {
+            problems.push(`${r.period} ${r.region}: 应为 ${r.value}，实际 ${actualValue}`);
+        }
+    });
+    return problems;
+}
+
 async function saveContainerDataToCloud(records) {
     if (!records || records.length === 0) return 0;
     const rowMap = new Map();
@@ -1247,6 +1277,44 @@ async function clearProvinceData() {
 
 function detectRegion(text) { if (!text) return null; text = String(text).trim(); if (/吴兴/.test(text)) return '吴兴区'; if (/南浔/.test(text)) return '南浔区'; if (/长兴/.test(text)) return '长兴县'; if (/德清/.test(text)) return '德清县'; if (/安吉/.test(text)) return '安吉县'; if (/南太湖|太湖新/.test(text)) return '南太湖新区'; if (/全市|湖州/.test(text)) return '全市'; return null; }
 function detectPeriod(text) { if (!text) return null; text = String(text).trim(); let m = text.match(/(\d{4})\s*[-\/年.．]\s*(\d{1,2})\s*月?/); if (m) return m[1] + '-' + m[2].padStart(2, '0'); m = text.match(/(\d{4})(\d{2})/); if (m && +m[2] >= 1 && +m[2] <= 12) return m[1] + '-' + m[2]; return null; }
+function normalizeExcelText(v) { return String(v || '').replace(/（/g, '(').replace(/）/g, ')').replace(/\s+/g, '').trim(); }
+function isTotalContainerHeader(v) {
+    const text = normalizeExcelText(v);
+    if (!text || !text.includes('集装箱吞吐量') || !text.includes('箱数')) return false;
+    return !/(进港|出港|内支线|国内航线|重箱)/.test(text);
+}
+function extractPeriodFromText(text) { return detectPeriod(String(text || '').replace(/[\[\]【】]/g, ' ')); }
+function detectRegionFromRow(row) {
+    if (!row) return null;
+    for (let j = 0; j < Math.min(row.length, 5); j++) {
+        const region = detectRegion(row[j]);
+        if (region) return region;
+    }
+    return null;
+}
+function getContainerHeaderInfo(row, fileName) {
+    if (!row) return null;
+    let col = -1;
+    for (let j = 0; j < row.length; j++) {
+        if (isTotalContainerHeader(row[j])) { col = j; break; }
+    }
+    const hasContainerHeader = row.some(c => normalizeExcelText(c).includes('集装箱吞吐量') && normalizeExcelText(c).includes('箱数'));
+    if (col < 0 && !hasContainerHeader) return null;
+    const rowText = row.map(c => String(c || '')).join(' ');
+    const period = col >= 0 ? (extractPeriodFromText(row[col]) || extractPeriodFromText(rowText) || extractPeriodFromText(fileName)) : (extractPeriodFromText(rowText) || extractPeriodFromText(fileName));
+    return { col, period, hasContainerHeader };
+}
+function getContainerExpectedPeriods(rows, fileName) {
+    const periods = new Set();
+    const issues = [];
+    (rows || []).forEach((row, idx) => {
+        const info = getContainerHeaderInfo(row, fileName);
+        if (!info || !info.hasContainerHeader) return;
+        if (info.period) periods.add(info.period);
+        else issues.push(`第${idx + 1}行发现集装箱表头但无法识别月份`);
+    });
+    return { periods: Array.from(periods).sort(), issues };
+}
 
 function normalizeCategory(name) {
     if (!name) return '';
@@ -1315,38 +1383,37 @@ function parseSheetRows(rows, sheetName, fileName) {
 function parseContainerSheet(rows, sheetName, fileName) {
     const records = [];
     if (!rows || rows.length < 3) return records;
-    
+
     let containerColIdx = -1;
     let currentPeriod = null;
-    
+
     for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
         if (!row || row.length === 0) continue;
-        
-        const firstCell = String(row[0] || '').trim();
-        
+
+        const headerInfo = getContainerHeaderInfo(row, fileName);
+        if (headerInfo && headerInfo.col >= 0) {
+            containerColIdx = headerInfo.col;
+            currentPeriod = headerInfo.period;
+            console.log('Found container column at', containerColIdx, 'period:', currentPeriod, 'header:', row[containerColIdx]);
+            continue;
+        }
+        if (headerInfo && headerInfo.hasContainerHeader) {
+            containerColIdx = -1;
+            currentPeriod = headerInfo.period;
+            continue;
+        }
+        const firstCell = normalizeExcelText(row[0]);
         if (firstCell === '指标' || firstCell === '所属组织机构') {
             containerColIdx = -1;
             currentPeriod = null;
-            for (let j = 0; j < row.length; j++) {
-                const headerVal = String(row[j] || '').trim();
-                if (headerVal === '集装箱吞吐量(箱数)' || (headerVal.includes('集装箱吞吐量(箱数)') && !headerVal.includes('进港') && !headerVal.includes('出港') && !headerVal.includes('内支线') && !headerVal.includes('国内航线') && !headerVal.includes('重箱'))) {
-                    containerColIdx = j;
-                    const periodMatch = headerVal.match(/\[(\d{4})[\年\-\/]?(\d{1,2})[\年\-\/]?月?\]/);
-                    if (periodMatch) {
-                        currentPeriod = periodMatch[1] + '-' + periodMatch[2].padStart(2, '0');
-                    }
-                    console.log('Found container column at', j, 'period:', currentPeriod, 'header:', headerVal);
-                    break;
-                }
-            }
             continue;
         }
-        
+
         if (containerColIdx >= 0 && currentPeriod) {
-            const region = detectRegion(firstCell);
+            const region = detectRegionFromRow(row);
             if (!region) continue;
-            
+
             let val = row[containerColIdx];
             if (val === null || val === undefined) {
                 val = 0;
@@ -1355,7 +1422,7 @@ function parseContainerSheet(rows, sheetName, fileName) {
                 val = parseFloat(val);
             }
             if (isNaN(val)) val = 0;
-            
+
             console.log('Container data:', currentPeriod, region, val);
             records.push({
                 period: currentPeriod,
@@ -1365,7 +1432,7 @@ function parseContainerSheet(rows, sheetName, fileName) {
             });
         }
     }
-    
+
     console.log('parseContainerSheet result:', records.length, 'records from', sheetName);
     return records;
 }
@@ -1375,8 +1442,10 @@ async function parseExcelFile(file) {
     const data = await file.arrayBuffer(); const wb = XLSX.read(data, { type: 'array' });
     const allRec = []; const containerRec = []; const fn = file.name.replace(/\.\w+$/, ''); const dbg = [];
     const skippedSheets = [];
+    const containerExpectedSet = new Set();
+    const containerParseIssues = [];
     for (const sn of wb.SheetNames) {
-        const sheet = wb.Sheets[sn]; 
+        const sheet = wb.Sheets[sn];
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
         const raw = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: true });
         dbg.push({ name: sn, totalRows: rows.length, rawRows: rows.slice(0, 25) });
@@ -1392,10 +1461,16 @@ async function parseExcelFile(file) {
         }
         for (const r of rec) r._source = `${file.name} / ${sn}`;
         allRec.push(...rec);
+        const expected = getContainerExpectedPeriods(rows, fn);
+        expected.periods.forEach(p => containerExpectedSet.add(p));
+        expected.issues.forEach(msg => containerParseIssues.push(`${sn}: ${msg}`));
         let cRec = parseContainerSheet(rows, sn, fn);
-        if (cRec.length === 0) { 
+        if (cRec.length === 0) {
             console.log('Trying raw data for container parsing...');
-            cRec = parseContainerSheet(raw, sn, fn); 
+            const rawExpected = getContainerExpectedPeriods(raw, fn);
+            rawExpected.periods.forEach(p => containerExpectedSet.add(p));
+            rawExpected.issues.forEach(msg => containerParseIssues.push(`${sn}: ${msg}`));
+            cRec = parseContainerSheet(raw, sn, fn);
         }
         for (const r of cRec) r._source = `${file.name} / ${sn}`;
         containerRec.push(...cRec);
@@ -1412,8 +1487,13 @@ async function parseExcelFile(file) {
     });
     const dedupedRec = Array.from(dedupMap.values());
     const dedupedContainerRec = Array.from(dedupContainerMap.values());
-    lastDebugInfo = { fileName: file.name, sheets: dbg, parsedCount: allRec.length, containerCount: containerRec.length, dedupedCount: dedupedRec.length, dedupedContainerCount: dedupedContainerRec.length };
-    return { cargoRecords: dedupedRec, containerRecords: dedupedContainerRec, skippedSheets };
+    const parsedContainerPeriods = new Set(dedupedContainerRec.map(r => r.period));
+    Array.from(containerExpectedSet).sort().forEach(period => {
+        if (!parsedContainerPeriods.has(period)) containerParseIssues.push(`发现 ${period} 集装箱表头，但未解析到区县集装箱数据`);
+    });
+    const containerExpectedPeriods = Array.from(containerExpectedSet).sort();
+    lastDebugInfo = { fileName: file.name, sheets: dbg, parsedCount: allRec.length, containerCount: containerRec.length, dedupedCount: dedupedRec.length, dedupedContainerCount: dedupedContainerRec.length, containerExpectedPeriods, containerParseIssues };
+    return { cargoRecords: dedupedRec, containerRecords: dedupedContainerRec, skippedSheets, containerExpectedPeriods, containerParseIssues };
 }
 
 function showDebugInfo() {
@@ -3177,10 +3257,33 @@ document.getElementById('uploadBtn').addEventListener('click', async function() 
     }
     const btn = this; btn.disabled = true; btn.textContent = '上传中...';
     let allRec = [], containerRec = [], errors = [];
-    for (const file of selectedFiles) { try { const result = await parseExcelFile(file); if (result.cargoRecords.length === 0 && result.containerRecords.length === 0) { let errMsg = '无数据'; if (result.skippedSheets && result.skippedSheets.length > 0) { errMsg = `无法识别月份（表格: ${result.skippedSheets.join(', ')}），请在表标题中注明月份如"2025年12月"`; } errors.push(`${file.name}: ${errMsg}`); } else { allRec.push(...result.cargoRecords); containerRec.push(...result.containerRecords); if (result.skippedSheets && result.skippedSheets.length > 0) { errors.push(`${file.name}: 部分表格跳过（无法识别月份: ${result.skippedSheets.join(', ')}）`); } } } catch (err) { errors.push(`${file.name}: ${err.message}`); } }
+    const expectedContainerPeriods = new Set();
+    const containerParseIssues = [];
+    for (const file of selectedFiles) {
+        try {
+            const result = await parseExcelFile(file);
+            (result.containerExpectedPeriods || []).forEach(p => expectedContainerPeriods.add(p));
+            (result.containerParseIssues || []).forEach(msg => containerParseIssues.push(`${file.name}: ${msg}`));
+            if (result.cargoRecords.length === 0 && result.containerRecords.length === 0) {
+                let errMsg = '无数据';
+                if (result.skippedSheets && result.skippedSheets.length > 0) {
+                    errMsg = `无法识别月份（表格: ${result.skippedSheets.join(', ')}），请在表标题中注明月份如"2025年12月"`;
+                }
+                errors.push(`${file.name}: ${errMsg}`);
+            } else {
+                allRec.push(...result.cargoRecords);
+                containerRec.push(...result.containerRecords);
+                if (result.skippedSheets && result.skippedSheets.length > 0) {
+                    errors.push(`${file.name}: 部分表格跳过（无法识别月份: ${result.skippedSheets.join(', ')}）`);
+                }
+            }
+        } catch (err) {
+            errors.push(`${file.name}: ${err.message}`);
+        }
+    }
     if (allRec.length === 0 && containerRec.length === 0) {
         btn.disabled = false; btn.textContent = '上传并解析';
-        showMessage('未解析到有效数据。' + errors.join('; '), 'error');
+        showMessage('未解析到有效数据。' + errors.concat(containerParseIssues).join('; '), 'error');
         document.getElementById('debugBtnArea').style.display = 'block';
         return;
     }
@@ -3196,12 +3299,22 @@ document.getElementById('uploadBtn').addEventListener('click', async function() 
         refreshOverview();
         const cloudCount = await supabaseGetCategoryCount();
         const countInfo = cloudCount >= 0 ? `，云端共 ${cloudCount} 条` : '';
-        if (allRec.length > 0) {
-            showMessage(`✅ 货物吞吐量 ${cargoSaved} 条，集装箱 ${containerSaved} 条${countInfo}`, 'success');
+        const containerWasExpected = expectedContainerPeriods.size > 0 || containerRec.length > 0;
+        const containerPersistProblems = containerRec.length > 0 ? getContainerPersistenceProblems(containerRec, containerData) : [];
+        const containerProblems = [...containerParseIssues, ...containerPersistProblems];
+        const containerOk = !containerWasExpected || (containerRec.length > 0 && containerProblems.length === 0);
+        if (!containerOk) {
+            document.getElementById('debugBtnArea').style.display = 'block';
+            const reason = containerProblems.length ? containerProblems.slice(0, 6).join('; ') : '发现集装箱表头，但未解析到集装箱数据';
+            const more = containerProblems.length > 6 ? ` 等 ${containerProblems.length} 个问题` : '';
+            const prefix = allRec.length > 0 ? `⚠️ 部分完成：货物吞吐量已保存 ${cargoSaved} 条，但集装箱数据未更新。` : '上传失败：集装箱数据未更新。';
+            showMessage(`${prefix}原因：${reason}${more}`, allRec.length > 0 ? 'warning' : 'error');
         } else if (containerRec.length > 0) {
-            showMessage(`✅ 集装箱数据 ${containerSaved} 条${countInfo}`, 'success');
+            showMessage(`✅ 上传完成：货物吞吐量 ${cargoSaved} 条，集装箱 ${containerSaved} 条，已验证集装箱数据写入${countInfo}`, 'success');
+        } else if (allRec.length > 0) {
+            showMessage(`✅ 货物吞吐量 ${cargoSaved} 条${countInfo}`, 'success');
         }
-        if (errors.length) showMessage(`部分问题: ${errors.join('; ')}`, 'warning');
+        if (errors.length && containerOk) showMessage(`部分问题: ${errors.join('; ')}`, 'warning');
     } catch(e) {
         showMessage('上传失败: ' + e.message, 'error');
     }
