@@ -630,6 +630,18 @@
         const nm = total % 12 + 1;
         return `${ny}-${String(nm).padStart(2, '0')}`;
     }
+    function calculateRangeComparison(allData, item, monthOffset) {
+        const compareStart = shiftMonth(item._rangeStart, monthOffset);
+        const compareEnd = shiftMonth(item._rangeEnd, monthOffset);
+        const compareRecords = allData.filter(rec =>
+            rec.company_code === item.company_code &&
+            rec.period >= compareStart &&
+            rec.period <= compareEnd
+        );
+        if (compareRecords.length === 0) return null;
+        const compareSum = compareRecords.reduce((sum, rec) => sum + rec.monthly_tonnage, 0);
+        return item.throughput - compareSum;
+    }
     function monthDiff(start, end) {
         const s = parseMonthKey(start);
         const e = parseMonthKey(end);
@@ -775,25 +787,16 @@
                         }
                     }
                 } else {
-                    // ——— 时间段累计模式（仅同比） ———
+                    // ——— 时间段累计模式 ———
                     const rs = item._rangeStart;
                     const re = item._rangeEnd;
                     if (!rs || !re) { display = '数据不全'; continue; }
 
-                    if (extraType === 'yoy') {
-                        const prevStart = shiftMonth(rs, -12);
-                        const prevEnd = shiftMonth(re, -12);
-                        const currSum = item.throughput;
-                        let prevSum = 0;
-                        for (const rec of allData) {
-                            if (rec.company_code === item.company_code && rec.period >= prevStart && rec.period <= prevEnd) {
-                                prevSum += rec.monthly_tonnage;
-                            }
-                        }
-                        if (prevSum === 0 && !allData.some(r => r.company_code === item.company_code && r.period >= prevStart && r.period <= prevEnd)) {
-                            display = '数据不全';
-                        } else {
-                            const inc = currSum - prevSum;
+                    if (extraType === 'mom' || extraType === 'yoy') {
+                        const monthOffset = extraType === 'mom' ? -1 : -12;
+                        const inc = calculateRangeComparison(allData, item, monthOffset);
+                        if (inc === null) display = '数据不全';
+                        else {
                             value = inc;
                             display = inc.toLocaleString();
                         }
@@ -820,7 +823,6 @@
     }
 
     async function handleMom() {
-        if (currentQueryMode !== 'single') { showMessage('环比仅支持单月查询模式', 'warning'); return; }
         if (!currentData.length) { showMessage('请先查询数据', 'warning'); return; }
         if (activeAnalytics === 'mom') return;
         removeExtraColumn();
@@ -906,7 +908,7 @@
                 data = await queryRange(start, end);
                 currentData = data;
                 renderBaseTable(data, 'range');
-                document.getElementById('momBtn').disabled = true;
+                document.getElementById('momBtn').disabled = false;
                 document.getElementById('yoyBtn').disabled = false;
             }
             const annualTh = document.getElementById('annualHeader');
@@ -968,24 +970,15 @@
             }
         } else {
             let extraValues = [];
-            if (activeAnalytics === 'yoy') {
+            if (activeAnalytics === 'mom' || activeAnalytics === 'yoy') {
                 const allData = await getAllData();
                 for (let item of currentData) {
                     const rs = item._rangeStart;
                     const re = item._rangeEnd;
                     if (!rs || !re) { extraValues.push('数据不全'); continue; }
-                    const prevStart = shiftMonth(rs, -12);
-                    const prevEnd = shiftMonth(re, -12);
-                    let prevSum = 0;
-                    let hasData = false;
-                    for (const rec of allData) {
-                        if (rec.company_code === item.company_code && rec.period >= prevStart && rec.period <= prevEnd) {
-                            prevSum += rec.monthly_tonnage;
-                            hasData = true;
-                        }
-                    }
-                    if (!hasData) extraValues.push('数据不全');
-                    else extraValues.push(item.throughput - prevSum);
+                    const monthOffset = activeAnalytics === 'mom' ? -1 : -12;
+                    const inc = calculateRangeComparison(allData, item, monthOffset);
+                    extraValues.push(inc === null ? '数据不全' : inc);
                 }
             }
             for (let idx = 0; idx < currentData.length; idx++) {
@@ -1190,7 +1183,7 @@
             rangeGroup.style.display = 'flex';
             singleBtn.classList.remove('active');
             rangeBtn.classList.add('active');
-            document.getElementById('momBtn').disabled = true;
+            document.getElementById('momBtn').disabled = false;
             document.getElementById('yoyBtn').disabled = false;
         }
         removeExtraColumn();
