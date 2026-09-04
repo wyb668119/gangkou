@@ -6,190 +6,150 @@
     <title>港口分类货物吞吐量统计分析</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-            /* ── 政务蓝·稳重 设计令牌 ── */
-            --c-primary: #16324f;        /* 藏蓝主色 */
-            --c-primary-deep: #0d2137;
-            --c-accent: #1f6fb2;         /* 强调蓝 */
-            --c-accent-hover: #185a92;
-            --c-accent-soft: #e8f1fa;    /* 强调蓝浅底 */
-            --c-success: #1f7a56;
-            --c-success-hover: #166346;
-            --c-warning: #b26a08;
-            --c-warning-hover: #8f5506;
-            --c-danger: #b3362a;
-            --c-danger-hover: #8f2b21;
-            --c-gold: #c9a15a;           /* 政务金点缀 */
-            --t-1: #10263d;              /* 标题文字 */
-            --t-2: #3e5468;              /* 正文文字 */
-            --t-3: #74869a;              /* 次要文字 */
-            --t-4: #a3b3c2;              /* 弱化文字 */
-            --bg-page: #eef2f7;
-            --bg-sub: #f6f8fb;
-            --line: #e2e9f1;
-            --line-strong: #c9d6e3;
-            --r-lg: 16px;
-            --r-md: 10px;
-            --r-pill: 999px;
-            --sh-card: 0 1px 2px rgba(16,38,61,0.04), 0 4px 14px rgba(16,38,61,0.06);
-            --sh-card-hover: 0 2px 4px rgba(16,38,61,0.06), 0 8px 22px rgba(16,38,61,0.10);
-            --sh-pop: 0 8px 28px rgba(16,38,61,0.18);
-        }
-        ::selection { background: #cfe3f5; }
-        body { background: var(--bg-page); font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; min-height: 100vh; padding: 14px; color: var(--t-2); }
+        body { background: linear-gradient(135deg, #e8f4f8 0%, #f0f6fa 50%, #e8f4f8 100%); font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; min-height: 100vh; padding: 14px; }
         .app { max-width: 1500px; margin: 0 auto; }
-        .header { background: linear-gradient(150deg, var(--c-primary) 0%, var(--c-primary-deep) 100%); padding: 22px 28px 20px; border-radius: var(--r-lg) var(--r-lg) 0 0; border-bottom: 2px solid var(--c-gold); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-        .header h1 { color: #f2f7fb; font-size: 1.4rem; font-weight: 600; display: flex; align-items: center; gap: 10px; letter-spacing: 0.5px; }
+        .header { background: linear-gradient(135deg, #1a3a4a 0%, #0d2137 100%); padding: 20px 28px; border-radius: 20px 20px 0 0; border-bottom: 3px solid #2c7da0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; box-shadow: 0 4px 20px rgba(44,125,160,0.25); }
+        .header h1 { color: #e8f4f8; font-size: 1.4rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
         .header h1::before { content: "📊"; font-size: 1.5rem; }
-        .header .sub { color: #8fb3cc; margin-top: 6px; font-size: 0.82rem; }
+        .header .sub { color: #7fb3c8; margin-top: 6px; font-size: 0.82rem; }
         .header-nav { display: flex; align-items: center; }
-        .header-nav a { color: #fff; text-decoration: none; font-size: 1rem; font-weight: 600; padding: 9px 22px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.35); border-radius: var(--r-pill); transition: all 0.25s; }
-        .header-nav a:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.6); }
-        .main { background: #f3f6fa; padding: 18px 24px 24px; border-radius: 0 0 var(--r-lg) var(--r-lg); }
-        .card { background: #fff; border-radius: var(--r-lg); padding: 14px 20px; margin-bottom: 14px; border: 1px solid var(--line); box-shadow: var(--sh-card); transition: box-shadow 0.25s ease; }
-        .card:hover { box-shadow: var(--sh-card-hover); }
-        .card-title { font-size: 0.9rem; font-weight: 600; color: var(--t-1); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; padding-bottom: 8px; border-bottom: 1px solid #edf2f7; }
+        .header-nav a { color: #fff; text-decoration: none; font-size: 1.05rem; font-weight: 600; padding: 10px 22px; background: linear-gradient(135deg, #2c7da0 0%, #1a5f7a 100%); border-radius: 30px; transition: all 0.3s; box-shadow: 0 4px 15px rgba(44,125,160,0.4); border: 1px solid rgba(255,255,255,0.2); }
+        .header-nav a:hover { background: linear-gradient(135deg, #3a9bc0 0%, #2c7da0 100%); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(44,125,160,0.5); }
+        .main { background: #f5f8fb; padding: 18px 24px 24px; border-radius: 0 0 20px 20px; }
+        .card { background: white; border-radius: 14px; padding: 14px 20px; margin-bottom: 14px; border: 1px solid #e2edf7; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+        .card-title { font-size: 0.88rem; font-weight: 600; color: #1a3a4a; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; padding-bottom: 8px; border-bottom: 1px solid #eef2f7; }
         .upload-area { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-        .btn { background: var(--c-accent); border: none; color: #fff; padding: 8px 20px; border-radius: var(--r-pill); font-weight: 500; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-        .btn:hover { background: var(--c-accent-hover); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-outline { background: #fff; border: 1px solid var(--line-strong); color: var(--t-2); }
-        .btn-outline:hover { background: var(--c-accent-soft); border-color: var(--c-accent); color: var(--c-accent); }
-        .btn-green { background: var(--c-success); } .btn-green:hover { background: var(--c-success-hover); }
-        .btn-orange { background: var(--c-warning); } .btn-orange:hover { background: var(--c-warning-hover); }
-        .btn-red { background: var(--c-danger); } .btn-red:hover { background: var(--c-danger-hover); }
+        .btn { background: linear-gradient(135deg, #2c7da0 0%, #1a5f7a 100%); border: none; color: white; padding: 8px 20px; border-radius: 40px; font-weight: 500; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; box-shadow: 0 2px 8px rgba(44,125,160,0.3); }
+        .btn:hover { background: linear-gradient(135deg, #3a9bc0 0%, #2c7da0 100%); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(44,125,160,0.4); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-green { background: linear-gradient(135deg, #27775a 0%, #1a5f45 100%); } .btn-green:hover { background: linear-gradient(135deg, #2d8d6a 0%, #27775a 100%); }
+        .btn-orange { background: linear-gradient(135deg, #c97b1a 0%, #a8651a 100%); } .btn-orange:hover { background: linear-gradient(135deg, #d98c2a 0%, #c97b1a 100%); }
+        .btn-red { background: linear-gradient(135deg, #c0392b 0%, #a93226 100%); } .btn-red:hover { background: linear-gradient(135deg, #d04535 0%, #c0392b 100%); }
         .btn-sm { padding: 5px 14px; font-size: 0.8rem; }
-        .file-info { font-size: 0.82rem; background: var(--bg-sub); padding: 5px 14px; border-radius: var(--r-pill); color: var(--t-2); border: 1px solid var(--line); }
+        .file-info { font-size: 0.82rem; background: #eef2f5; padding: 5px 14px; border-radius: 30px; color: #4a627a; }
         .msg-area { margin-top: 8px; font-size: 0.8rem; }
-        .msg-success { color: var(--c-success); } .msg-error { color: var(--c-danger); } .msg-warning { color: var(--c-warning); }
+        .msg-success { color: #27775a; } .msg-error { color: #c0392b; } .msg-warning { color: #c97b1a; }
         .dot-anim { animation: dotFade 1.4s infinite both; }
         /* ── 登录弹窗 ── */
-        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(13,33,55,0.5); z-index:9998; justify-content:center; align-items:center; }
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:9998; justify-content:center; align-items:center; }
         .modal-overlay.show { display:flex; }
-        .modal-box { background:#fff; border-radius:var(--r-lg); padding:30px 32px 24px; width:340px; max-width:92vw; box-shadow:var(--sh-pop); text-align:center; }
-        .modal-box h2 { color:var(--t-1); font-size:1.05rem; margin-bottom:18px; }
-        .modal-box input { display:block; width:100%; padding:10px 14px; margin-bottom:12px; border:1px solid var(--line-strong); border-radius:var(--r-pill); font-size:0.85rem; outline:none; transition: border-color 0.2s, box-shadow 0.2s; }
-        .modal-box input:focus { border-color:var(--c-accent); box-shadow: 0 0 0 3px rgba(31,111,178,0.12); }
+        .modal-box { background:#fff; border-radius:18px; padding:30px 32px 24px; width:340px; max-width:92vw; box-shadow:0 20px 50px rgba(0,0,0,0.3); text-align:center; }
+        .modal-box h2 { color:#1a3a4a; font-size:1.05rem; margin-bottom:18px; }
+        .modal-box input { display:block; width:100%; padding:10px 14px; margin-bottom:12px; border:1px solid #cbdbe0; border-radius:20px; font-size:0.85rem; outline:none; }
+        .modal-box input:focus { border-color:#2c7da0; }
         .modal-box .btn { width:100%; justify-content:center; }
-        .modal-close { position:absolute; top:12px; right:16px; font-size:1.2rem; color:var(--t-3); cursor:pointer; }
+        .modal-close { position:absolute; top:12px; right:16px; font-size:1.2rem; color:#8ba0b5; cursor:pointer; }
         @keyframes dotFade { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
-        /* ── 加载屏（政务蓝·简洁单环） ── */
-        .page-loading { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(165deg, #0e2238 0%, #16324f 100%); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .page-loading-ring { position: relative; width: 64px; height: 64px; }
-        .page-loading-ring::before { content: ''; position: absolute; border-radius: 50%; inset: 0; border: 3px solid rgba(255,255,255,0.15); border-top-color: #cfe3f5; animation: spin 0.9s linear infinite; }
-        .page-loading-ring::after, .page-loading-glow { display: none; }
-        .page-loading-text { font-size: 1.05rem; color: #d7e6f2; font-weight: 500; margin-top: 26px; letter-spacing: 3px; }
-        .page-loading-progress { width: 240px; height: 3px; background: rgba(255,255,255,0.12); border-radius: 3px; margin-top: 20px; overflow: hidden; }
-        .page-loading-progress-bar { width: 0%; height: 100%; background: var(--c-gold); border-radius: 3px; transition: width 0.4s ease; }
-        .page-loading-tips { font-size: 0.82rem; color: rgba(255,255,255,0.55); margin-top: 12px; letter-spacing: 1px; }
-        .page-loading-pct { font-size: 0.75rem; color: rgba(255,255,255,0.45); margin-top: 6px; text-align: center; font-variant-numeric: tabular-nums; }
-        .page-loading-dots span { animation: dotFade 1.4s infinite both; }
+        .page-loading { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #0a192f 0%, #112240 50%, #1a365d 100%); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .page-loading-ring { position: relative; width: 80px; height: 80px; }
+        .page-loading-ring::before, .page-loading-ring::after { content: ''; position: absolute; border-radius: 50%; }
+        .page-loading-ring::before { inset: 0; border: 3px solid transparent; border-top-color: #00d4ff; border-right-color: #00d4ff; animation: spin 1s linear infinite; }
+        .page-loading-ring::after { inset: 8px; border: 3px solid transparent; border-bottom-color: #7b2cbf; border-left-color: #7b2cbf; animation: spin 0.7s linear infinite reverse; }
+        .page-loading-glow { position: absolute; inset: -10px; border-radius: 50%; background: radial-gradient(circle, rgba(0,212,255,0.3) 0%, transparent 70%); animation: pulse 1.5s ease-in-out infinite; }
+        .page-loading-text { font-size: 1.15rem; color: #00d4ff; font-weight: 500; margin-top: 28px; letter-spacing: 3px; text-shadow: 0 0 10px rgba(0,212,255,0.5); }
+        .page-loading-progress { width: 240px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-top: 20px; overflow: hidden; }
+        .page-loading-progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #00d4ff, #7b2cbf); border-radius: 4px; transition: width 0.4s ease; }
+        .page-loading-tips { font-size: 0.82rem; color: rgba(255,255,255,0.5); margin-top: 12px; letter-spacing: 1px; }
+        .page-loading-pct { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-top: 6px; text-align: center; font-variant-numeric: tabular-nums; }
+        .page-loading-dots span { animation: dotFade 1.4s infinite both; text-shadow: 0 0 8px rgba(0,212,255,0.8); }
         .page-loading-dots span:nth-child(2) { animation-delay: 0.2s; }
         .page-loading-dots span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes pulse { 0%, 100% { opacity: 0.4; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.1); } }
         .tag-container { display: flex; flex-wrap: wrap; gap: 6px; }
-        .tag { background: var(--c-accent-soft); padding: 4px 12px; border-radius: var(--r-pill); font-size: 0.75rem; font-weight: 500; color: var(--t-1); border: 1px solid #c6dcf0; }
-        .tag-remove { margin-left: 6px; cursor: pointer; color: var(--c-danger); font-weight: bold; }
-        .tag-remove:hover { color: var(--c-danger-hover); }
+        .tag { background: #eef2f9; padding: 4px 12px; border-radius: 30px; font-size: 0.75rem; font-weight: 500; color: #1e466e; border: 1px solid #d0dce8; }
+        .tag-remove { margin-left: 6px; cursor: pointer; color: #c0392b; font-weight: bold; }
+        .tag-remove:hover { color: #a93226; }
         .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         @media (max-width: 900px) { .filter-grid { grid-template-columns: 1fr; } }
-        .filter-section { background: var(--bg-sub); border-radius: var(--r-md); padding: 10px 14px; border: 1px solid var(--line); }
-        .filter-label { font-size: 0.78rem; font-weight: 600; color: var(--t-1); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
-        .filter-label .select-all { font-weight: 400; color: var(--c-accent); cursor: pointer; font-size: 0.75rem; }
+        .filter-section { background: #f8fafd; border-radius: 10px; padding: 10px 14px; border: 1px solid #e6edf4; }
+        .filter-label { font-size: 0.78rem; font-weight: 600; color: #1a3a4a; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+        .filter-label .select-all { font-weight: 400; color: #2c7da0; cursor: pointer; font-size: 0.75rem; }
         .filter-label .select-all:hover { text-decoration: underline; }
         .checkbox-grid { display: flex; flex-wrap: wrap; gap: 5px; }
-        .cb-item { display: flex; align-items: center; gap: 4px; font-size: 0.78rem; color: var(--t-2); background: #fff; padding: 2px 10px; border-radius: 18px; border: 1px solid var(--line); cursor: pointer; transition: all 0.15s; user-select: none; }
-        .cb-item:hover { border-color: var(--c-accent); background: var(--c-accent-soft); }
-        .cb-item.checked { background: var(--c-accent-soft); border-color: var(--c-accent); color: var(--t-1); font-weight: 500; }
+        .cb-item { display: flex; align-items: center; gap: 4px; font-size: 0.78rem; color: #3a5068; background: white; padding: 2px 10px; border-radius: 18px; border: 1px solid #dfe8f0; cursor: pointer; transition: all 0.15s; user-select: none; }
+        .cb-item:hover { border-color: #2c7da0; background: #f0f7fb; }
+        .cb-item.checked { background: #e3f2fd; border-color: #2c7da0; color: #1a3a4a; font-weight: 500; }
         .cb-item input { display: none; }
         .period-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .period-row select, .period-row input { padding: 5px 10px; border-radius: 18px; border: 1px solid var(--line-strong); font-size: 0.78rem; background: #fff; color: var(--t-2); }
-        .period-row select:focus, .period-row input:focus { outline: none; border-color: var(--c-accent); box-shadow: 0 0 0 3px rgba(31,111,178,0.10); }
-        .action-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #edf2f7; }
-        .table-wrapper { overflow-x: auto; border-radius: var(--r-md); border: 1px solid var(--line); background: #fff; margin-top: 6px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.78rem; border: 1px solid var(--line-strong); }
-        th, td { padding: 7px 6px; text-align: center; border: 1px solid #d9e3ed; white-space: nowrap; }
-        th { background: var(--c-primary); color: #fff; font-weight: 600; border-color: rgba(255,255,255,0.14); }
-        td { color: var(--t-2); }
+        .period-row select, .period-row input { padding: 5px 10px; border-radius: 20px; border: 1px solid #cbdbe0; font-size: 0.78rem; background: white; }
+        .action-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #eef2f7; }
+        .table-wrapper { overflow-x: auto; border-radius: 10px; border: 1px solid #eef2f8; background: white; margin-top: 6px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.78rem; border: 1px solid #b0c4d8; }
+        th, td { padding: 7px 6px; text-align: center; border: 1px solid #c8d6e0; white-space: nowrap; }
+        th { background: #e8f0f8; color: #1a3a4a; font-weight: 600; }
+        td { color: #3a5068; }
         td.num { font-variant-numeric: tabular-nums; text-align: right; padding-right: 14px; }
-        td.label { text-align: left; padding-left: 14px; font-weight: 500; color: var(--t-1); }
-        tbody tr:nth-child(even) { background: #f7fafc; }
-        tbody tr:hover { background: #eef4fa; }
-        tbody tr.total-row { background: var(--c-accent-soft); font-weight: 600; color: var(--t-1); border-top: 2px solid var(--c-accent); }
-        tbody tr.total-row:hover { background: var(--c-accent-soft); }
-        .no-data { text-align: center; padding: 30px; color: var(--t-3); font-size: 0.85rem; }
-        .footer { text-align: center; font-size: 0.82rem; color: var(--t-3); margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line); }
-        .stats-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
-        .stat-item { background: linear-gradient(180deg, #fbfdff 0%, #f4f8fc 100%); border-radius: var(--r-md); padding: 10px 14px 9px; border: 1px solid var(--line); flex: 1; min-width: 100px; position: relative; overflow: hidden; }
-        .stat-item::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--c-accent); }
-        .stat-item:nth-child(2)::before { background: var(--c-success); }
-        .stat-item:nth-child(3)::before { background: var(--c-warning); }
-        .stat-item:nth-child(4)::before { background: #3a8fb5; }
-        .stat-item .stat-val { font-size: 1.35rem; font-weight: 700; color: var(--t-1); font-variant-numeric: tabular-nums; }
-        .stat-item .stat-label { font-size: 0.7rem; color: var(--t-3); margin-top: 2px; letter-spacing: 0.5px; }
-        .help-text { font-size: 0.72rem; color: var(--t-2); background: var(--bg-sub); padding: 6px 12px; border-radius: 14px; margin-top: 8px; line-height: 1.5; border: 1px solid var(--line); }
+        td.label { text-align: left; padding-left: 14px; font-weight: 500; }
+        .total-row { background: #e8f4f8; font-weight: 600; }
+        .no-data { text-align: center; padding: 30px; color: #8ba0b5; font-size: 0.85rem; }
+        .footer { text-align: center; font-size: 0.82rem; color: #7fb3c8; margin-top: 18px; padding-top: 12px; border-top: 1px solid #e2edf7; }
+        .stats-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+        .stat-item { background: #f8fafd; border-radius: 8px; padding: 8px 14px; border: 1px solid #e6edf4; flex: 1; min-width: 100px; }
+        .stat-item .stat-val { font-size: 1.1rem; font-weight: 700; color: #1a3a4a; }
+        .stat-item .stat-label { font-size: 0.7rem; color: #7f8fa4; margin-top: 1px; }
+        .help-text { font-size: 0.72rem; color: #4a627a; background: #eef2fa; padding: 6px 12px; border-radius: 16px; margin-top: 8px; line-height: 1.5; }
 
 
         .tpl-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; align-items: center; }
-        .tpl-tab { padding: 6px 14px; border-radius: var(--r-pill); font-size: 0.78rem; border: 1.5px solid var(--line); cursor: pointer; transition: all 0.15s; background: #fff; color: var(--t-2); font-weight: 500; display: flex; align-items: center; gap: 5px; }
-        .tpl-tab:hover { border-color: var(--c-accent); background: var(--c-accent-soft); }
-        .tpl-tab.active { background: var(--c-accent); color: #fff; border-color: var(--c-accent); }
+        .tpl-tab { padding: 6px 14px; border-radius: 30px; font-size: 0.78rem; border: 1.5px solid #dfe8f0; cursor: pointer; transition: all 0.15s; background: white; color: #4a627a; font-weight: 500; display: flex; align-items: center; gap: 5px; }
+        .tpl-tab:hover { border-color: #2c7da0; background: #f0f7fb; }
+        .tpl-tab.active { background: linear-gradient(135deg, #2c7da0 0%, #1a5f7a 100%); color: white; border-color: #2c7da0; box-shadow: 0 2px 8px rgba(44,125,160,0.3); }
         .tpl-tab .tpl-tab-close { font-size: 0.7rem; opacity: 0.6; margin-left: 4px; }
-        .tpl-tab .tpl-tab-close:hover { opacity: 1; color: var(--c-danger); }
-        .tpl-add-btn { width: 32px; height: 32px; border-radius: 50%; border: 1.5px dashed var(--line-strong); background: transparent; color: var(--t-3); font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
-        .tpl-add-btn:hover { border-color: var(--c-accent); color: var(--c-accent); background: var(--c-accent-soft); }
+        .tpl-tab .tpl-tab-close:hover { opacity: 1; color: #c0392b; }
+        .tpl-add-btn { width: 32px; height: 32px; border-radius: 50%; border: 1.5px dashed #b0c4d8; background: transparent; color: #7f8fa4; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+        .tpl-add-btn:hover { border-color: #2c7da0; color: #2c7da0; background: #f0f7fb; }
 
-        .tpl-editor { background: var(--bg-sub); border-radius: 12px; padding: 14px 16px; border: 1px solid var(--line); margin-bottom: 12px; }
+        .tpl-editor { background: #f8fafd; border-radius: 12px; padding: 14px 16px; border: 1px solid #e6edf4; margin-bottom: 12px; }
         .tpl-editor-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .tpl-editor-row label { font-size: 0.78rem; font-weight: 600; color: var(--t-1); min-width: 60px; }
-        .tpl-editor-row select, .tpl-editor-row input[type="text"] { padding: 5px 10px; border-radius: 18px; border: 1px solid var(--line-strong); font-size: 0.78rem; background: #fff; }
+        .tpl-editor-row label { font-size: 0.78rem; font-weight: 600; color: #1a3a4a; min-width: 60px; }
+        .tpl-editor-row select, .tpl-editor-row input[type="text"] { padding: 5px 10px; border-radius: 20px; border: 1px solid #cbdbe0; font-size: 0.78rem; background: white; }
         .tpl-editor-row input[type="text"] { width: 180px; }
         .overview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .chart-box { background: #fff; border-radius: var(--r-lg); padding: 16px 18px; border: 1px solid var(--line); position: relative; box-shadow: var(--sh-card); transition: box-shadow 0.3s ease; }
-        .chart-box:hover { box-shadow: var(--sh-card-hover); }
-        .chart-box h3 { font-size: 0.88rem; color: var(--t-1); margin-bottom: 4px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
-        .chart-box h3::before { content: ""; width: 4px; height: 16px; background: var(--c-accent); border-radius: 2px; }
-        .chart-box .chart-sub { font-size: 0.74rem; color: var(--t-3); margin-bottom: 12px; padding-left: 10px; border-left: 2px solid var(--line); }
+        .chart-box { background: linear-gradient(145deg, #ffffff 0%, #f8fafd 100%); border-radius: 14px; padding: 16px 18px; border: 1px solid #e6edf4; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.04); transition: box-shadow 0.3s ease; }
+        .chart-box:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+        .chart-box h3 { font-size: 0.88rem; color: #1a3a4a; margin-bottom: 4px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .chart-box h3::before { content: ""; width: 4px; height: 16px; background: linear-gradient(180deg, #2c7da0 0%, #27775a 100%); border-radius: 2px; }
+        .chart-box .chart-sub { font-size: 0.74rem; color: #7f8fa4; margin-bottom: 12px; padding-left: 10px; border-left: 2px solid #e6edf4; }
         .chart-box canvas { max-height: 280px; }
         .chart-center-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
-        .chart-center-label .center-val { font-size: 1.1rem; font-weight: 700; color: var(--t-1); }
-        .chart-center-label .center-unit { font-size: 0.68rem; color: var(--t-3); }
+        .chart-center-label .center-val { font-size: 1.1rem; font-weight: 700; color: #1a3a4a; }
+        .chart-center-label .center-unit { font-size: 0.68rem; color: #7f8fa4; }
         @media (max-width: 768px) { .overview-grid { grid-template-columns: 1fr; } }
 
         .trend-rank-section { display: grid; grid-template-columns: 3fr 1fr; gap: 16px; margin-top: 14px; margin-bottom: 20px; }
         @media (max-width: 1000px) { .trend-rank-section { grid-template-columns: 1fr; } }
-        .trend-card { background: #fff; border-radius: var(--r-lg); padding: 16px 18px; border: 1px solid var(--line); box-shadow: var(--sh-card); }
-        .trend-card .trend-title { font-size: 0.9rem; font-weight: 600; color: var(--t-1); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-        .trend-card .trend-title::before { content: ""; width: 4px; height: 18px; background: var(--c-accent); border-radius: 2px; }
+        .trend-card { background: white; border-radius: 14px; padding: 16px 18px; border: 1px solid #e2edf7; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+        .trend-card .trend-title { font-size: 0.9rem; font-weight: 600; color: #1a3a4a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .trend-card .trend-title::before { content: ""; width: 4px; height: 18px; background: linear-gradient(180deg, #2c7da0 0%, #27775a 100%); border-radius: 2px; }
         #trendChart { width: 100%; height: 280px; }
-        .trend-footer { text-align: center; font-size: 0.7rem; color: var(--t-4); margin-top: 10px; padding-top: 8px; border-top: 1px solid #edf2f7; }
+        .trend-footer { text-align: center; font-size: 0.7rem; color: #8c8f9a; margin-top: 10px; padding-top: 8px; border-top: 1px solid #eef2f7; }
 
-        .rank-card { background: #fff; border-radius: var(--r-lg); padding: 16px 18px; border: 1px solid var(--line); box-shadow: var(--sh-card); }
-        .rank-card .rank-title { font-size: 0.9rem; font-weight: 600; color: var(--t-1); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-        .rank-card .rank-title::before { content: ""; width: 4px; height: 18px; background: var(--c-gold); border-radius: 2px; }
+        .rank-card { background: white; border-radius: 14px; padding: 16px 18px; border: 1px solid #e2edf7; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+        .rank-card .rank-title { font-size: 0.9rem; font-weight: 600; color: #1a3a4a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .rank-card .rank-title::before { content: ""; width: 4px; height: 18px; background: linear-gradient(180deg, #e8913e 0%, #c97b1a 100%); border-radius: 2px; }
         .rank-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center; }
-        .rank-controls select { padding: 5px 12px; border-radius: 18px; border: 1px solid var(--line-strong); font-size: 0.78rem; background: #fff; cursor: pointer; color: var(--t-2); }
-        .rank-controls select:focus { outline: none; border-color: var(--c-accent); box-shadow: 0 0 0 3px rgba(31,111,178,0.10); }
+        .rank-controls select { padding: 5px 12px; border-radius: 20px; border: 1px solid #cbdbe0; font-size: 0.78rem; background: white; cursor: pointer; }
+        .rank-controls select:focus { outline: none; border-color: #2c7da0; }
         .rank-actions { display: flex; gap: 6px; margin-left: auto; }
-        .btn-link { background: var(--c-accent-soft); border: 1px solid #b7d3ea; color: var(--c-accent); font-size: 0.72rem; cursor: pointer; padding: 4px 12px; border-radius: 14px; transition: all 0.2s; font-weight: 500; }
-        .btn-link:hover { background: var(--c-accent); color: #fff; border-color: var(--c-accent); }
+        .btn-link { background: linear-gradient(135deg, #e8f4fc 0%, #d6edf7 100%); border: 1px solid #a8d4e6; color: #2c7da0; font-size: 0.72rem; cursor: pointer; padding: 4px 12px; border-radius: 14px; transition: all 0.2s; font-weight: 500; }
+        .btn-link:hover { background: linear-gradient(135deg, #2c7da0 0%, #1a5f7a 100%); color: white; border-color: #2c7da0; box-shadow: 0 2px 8px rgba(44,125,160,0.3); }
         .rank-list { max-height: 220px; overflow-y: auto; overflow-x: hidden; }
         .rank-list::-webkit-scrollbar { width: 5px; }
         .rank-list::-webkit-scrollbar-track { background: #f0f4f8; border-radius: 3px; }
-        .rank-list::-webkit-scrollbar-thumb { background: #b7cfe2; border-radius: 3px; }
-        .rank-list::-webkit-scrollbar-thumb:hover { background: #8fb8d4; }
-        .rank-item { display: flex; align-items: center; padding: 5px 8px; border-radius: 8px; margin-bottom: 4px; background: var(--bg-sub); transition: all 0.2s; border: 1px solid transparent; }
+        .rank-list::-webkit-scrollbar-thumb { background: #a8d4e6; border-radius: 3px; }
+        .rank-list::-webkit-scrollbar-thumb:hover { background: #7bb8d4; }
+        .rank-item { display: flex; align-items: center; padding: 5px 8px; border-radius: 8px; margin-bottom: 4px; background: #f8fafd; transition: all 0.2s; border: 1px solid transparent; }
         .rank-item:hover { background: #eef2f7; transform: translateX(2px); }
-        .rank-item.top3 { background: linear-gradient(135deg, #fffbf0 0%, #fff8e8 100%); border: 1px solid #ecd9a8; }
-        .rank-item.huzhou { background: var(--c-accent-soft); border: 1px solid #b7d3ea; }
-        .rank-num { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; margin-right: 8px; background: #e6edf4; color: var(--t-2); }
-        .rank-item.top3 .rank-num { background: var(--c-gold); color: #fff; }
-        .rank-item.huzhou .rank-num { background: var(--c-accent); color: #fff; }
-        .rank-city { flex: 1; font-size: 0.75rem; color: var(--t-1); font-weight: 500; }
-        .rank-value { font-size: 0.75rem; font-weight: 600; color: var(--t-1); margin-right: 3px; }
-        .rank-item.top3 .rank-value { color: var(--c-warning); }
-        .rank-unit { font-size: 0.65rem; color: var(--t-4); }
+        .rank-item.top3 { background: linear-gradient(135deg, #fffbf0 0%, #fff8e8 100%); border: 1px solid #f5deb3; box-shadow: 0 2px 8px rgba(245,166,35,0.15); }
+        .rank-item.huzhou { background: linear-gradient(135deg, #e8f4fc 0%, #d6edf7 100%); border: 1px solid #a8d4e6; }
+        .rank-num { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; margin-right: 8px; background: #e6edf4; color: #4a627a; }
+        .rank-item.top3 .rank-num { background: linear-gradient(135deg, #f5a623 0%, #e8913e 100%); color: white; box-shadow: 0 2px 6px rgba(245,166,35,0.4); }
+        .rank-item.huzhou .rank-num { background: linear-gradient(135deg, #2c7da0 0%, #1a5f7a 100%); color: white; }
+        .rank-city { flex: 1; font-size: 0.75rem; color: #1a3a4a; font-weight: 500; }
+        .rank-value { font-size: 0.75rem; font-weight: 600; color: #1a3a4a; margin-right: 3px; }
+        .rank-item.top3 .rank-value { color: #e8913e; }
+        .rank-unit { font-size: 0.65rem; color: #8ba0b5; }
         .province-indicator-table {
             table-layout: auto;
             width: 100%;
@@ -207,20 +167,18 @@
             white-space: normal;
             word-break: keep-all;
             padding: 6px 10px;
-            background: #e8eff6;
+            background: #eef4f8;
             font-weight: 600;
-            color: var(--t-1);
-            border-color: #d3dfe9;
+            color: #1a3a4a;
         }
         .province-indicator-table .pi-header-row th {
-            background: #dbe7f2;
-            color: var(--t-1);
+            background: #e8f0f8;
+            color: #1a3a4a;
         }
         .province-indicator-table .pi-title-row th {
-            background: var(--c-primary);
-            color: #fff;
+            background: #d6e6f0;
+            color: #1a3a4a;
             font-size: 0.88rem;
-            border-color: rgba(255,255,255,0.14);
         }
 
         /* ── 手机端响应式 ── */
@@ -291,9 +249,9 @@
                 <span id="fileName" class="file-info">未选择文件</span>
                 <button id="uploadBtn" class="btn btn-green" disabled>上传并解析</button>
                 <button id="clearAllBtn" class="btn btn-red btn-sm">清空数据</button>
-                <button id="exportBackupBtn" class="btn btn-outline btn-sm">导出备份</button>
+                <button id="exportBackupBtn" class="btn btn-orange btn-sm">导出备份</button>
                 <input type="file" id="importBackup" accept=".json" style="display:none;">
-                <button class="btn btn-outline btn-sm" onclick="authThenImportBackup()">导入备份</button>
+                <button class="btn btn-sm" onclick="authThenImportBackup()">导入备份</button>
             </div>
             <div class="help-text">💡 支持上传行业统计平台生成的港口分类货物吞吐量表。地区和月份自动识别。数据通过 Supabase 云端实时同步，所有用户共享同一数据库。</div>
             <div id="uploadMsg" class="msg-area"></div>
@@ -311,12 +269,12 @@
                     </div>
                 </div>
                 <div id="monthlyOverviewBox" style="flex:2;min-width:320px;background:linear-gradient(135deg,#f0f7fb 0%,#e8f4f8 100%);border-radius:12px;padding:8px 14px;border:1px solid #d0e4ef;display:none;">
-                    <div style="font-size:0.78rem;line-height:1.65;color:#2a4a5a;"><span style="font-size:0.82rem;font-weight:600;color:#10263d;white-space:nowrap;"><span style="width:4px;height:14px;background:linear-gradient(180deg,#2c7da0 0%,#27775a 100%);border-radius:2px;display:inline-block;vertical-align:middle;margin-right:5px;"></span>当月数据概述 </span><span id="monthlyOverviewText"></span></div>
+                    <div style="font-size:0.78rem;line-height:1.65;color:#2a4a5a;"><span style="font-size:0.82rem;font-weight:600;color:#1a3a4a;white-space:nowrap;"><span style="width:4px;height:14px;background:linear-gradient(180deg,#2c7da0 0%,#27775a 100%);border-radius:2px;display:inline-block;vertical-align:middle;margin-right:5px;"></span>当月数据概述 </span><span id="monthlyOverviewText"></span></div>
                 </div>
             </div>
             <div id="cloudLoadingHint" style="text-align:center;padding:12px;color:#e53935;font-size:0.9rem;font-weight:600;display:none;">云端数据读取中,请稍等<span class="dot-anim">.</span><span class="dot-anim" style="animation-delay:0.2s;">.</span><span class="dot-anim" style="animation-delay:0.4s;">.</span></div>
             <div style="text-align:center;margin:8px 0;">
-                <span id="detailToggleBtn" onclick="toggleDetailInfo()" style="cursor:pointer;color:#1f6fb2;font-size:0.8rem;">展开详情 ▼</span>
+                <span id="detailToggleBtn" onclick="toggleDetailInfo()" style="cursor:pointer;color:#2c7da0;font-size:0.8rem;">展开详情 ▼</span>
             </div>
             <div id="detailInfoArea" style="display:none;">
                 <div style="margin-bottom:8px;"><div class="filter-label">已上传月份</div><div id="monthTags" class="tag-container"><span class="tag">暂无数据</span></div></div>
@@ -366,7 +324,7 @@
                             <select id="categoryPeriodEnd" style="width:100px;font-size:0.75rem;"></select>
                         </div>
                         <div class="chart-sub" id="categoryChartSub"></div>
-                        <div id="categoryTotalDisplay" style="text-align:center;font-size:0.85rem;color:#10263d;font-weight:600;margin-bottom:8px;"></div>
+                        <div id="categoryTotalDisplay" style="text-align:center;font-size:0.85rem;color:#1a3a4a;font-weight:600;margin-bottom:8px;"></div>
                         <canvas id="categoryChart"></canvas>
                     </div>
                     <div class="chart-box">
@@ -402,7 +360,7 @@
                             <select id="containerPeriodEnd" style="width:100px;font-size:0.75rem;"></select>
                         </div>
                         <div class="chart-sub" id="containerChartSub"></div>
-                        <div id="containerTotalDisplay" style="text-align:center;font-size:0.85rem;color:#10263d;font-weight:600;margin-bottom:8px;"></div>
+                        <div id="containerTotalDisplay" style="text-align:center;font-size:0.85rem;color:#1a3a4a;font-weight:600;margin-bottom:8px;"></div>
                         <canvas id="containerChart"></canvas>
                     </div>
                 </div>
@@ -411,7 +369,7 @@
 
 	                <div class="card">
             <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid #eef2f7;margin-bottom:10px;">
-                <div style="font-size:0.88rem;font-weight:600;color:#10263d;display:flex;align-items:center;gap:6px;">📊 全省港口生产指标一览表</div>
+                <div style="font-size:0.88rem;font-weight:600;color:#1a3a4a;display:flex;align-items:center;gap:6px;">📊 全省港口生产指标一览表</div>
                 <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                     <button class="btn btn-green" onclick="exportProvinceIndicatorTable()">导出表格</button>
                 </div>
@@ -427,7 +385,7 @@
 
 <div class="card">
 	            <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid #eef2f7;margin-bottom:10px;">
-	                <div style="font-size:0.88rem;font-weight:600;color:#10263d;display:flex;align-items:center;gap:6px;">📊 历年港口统计资料</div>
+	                <div style="font-size:0.88rem;font-weight:600;color:#1a3a4a;display:flex;align-items:center;gap:6px;">📊 历年港口统计资料</div>
 	                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
 	                    <input type="file" id="histExcelFile" accept=".xlsx, .xls" style="display:none;">
 	                    <button class="btn-link" onclick="authThenHistPickFile()">选择Excel文件</button>
@@ -463,7 +421,7 @@
         <div class="card" id="resultCard" style="display:none;">
             <div class="card-title" id="resultTitle">📊 快速查询结果</div>
             <div class="period-row">
-                <label style="font-size:0.82rem;font-weight:600;color:#10263d;">查询模式：</label>
+                <label style="font-size:0.82rem;font-weight:600;color:#1a3a4a;">查询模式：</label>
                 <select id="modeSelect"><option value="single">单月查询</option><option value="compare">多月对比</option></select>
             </div>
             <div class="period-row" id="singlePeriod"><label style="font-size:0.82rem;">月份：</label><select id="monthSelect"><option value="">-- 请选择 --</option></select></div>
@@ -1714,7 +1672,7 @@ async function deleteSelectedContainerMonths() {
 
 let regionChartInst = null, categoryChartInst = null, yoyChartInst = null;
 
-const CHART_COLORS = ['#1f6fb2','#3a8fb5','#2a9d8f','#7fb3d8','#b26a08','#5b8c5a','#16324f','#c9a15a','#45818e','#8f6bb0','#d16666','#6b9ac4','#7d9c3f','#a85d7e','#4e7d9b','#a06a3f'];
+const CHART_COLORS = ['#2c7da0','#e76f51','#2a9d8f','#e9c46a','#6930c3','#f4a261','#264653','#d62828','#6a994e','#9b5de5','#00bbf9','#f15bb5','#fee440','#00f5d4','#3a86ff','#fb8500'];
 
 function toWan(val) { return (val / 10000).toFixed(2); }
 
@@ -1924,7 +1882,7 @@ function renderRegionChartOnly(year, months) {
             plugins: {
                 legend: {
                     position: 'right',
-                    labels: { font: { size: 12, weight: '500' }, padding: 14, usePointStyle: true, pointStyleWidth: 10, color: '#10263d' }
+                    labels: { font: { size: 12, weight: '500' }, padding: 14, usePointStyle: true, pointStyleWidth: 10, color: '#1a3a4a' }
                 },
                 tooltip: {
                     backgroundColor: 'rgba(26,58,74,0.9)',
@@ -1993,8 +1951,8 @@ function renderYoyChartOnly(year, months) {
                 {
                     label: `${prevYear}年`,
                     data: lastYearCatData.map(v => v / 10000),
-                    backgroundColor: '#b7cbdc',
-                    borderColor: '#9db8cd',
+                    backgroundColor: '#a8c5d6',
+                    borderColor: '#7aaac5',
                     borderWidth: 0,
                     borderRadius: 4,
                     borderSkipped: false,
@@ -2004,8 +1962,8 @@ function renderYoyChartOnly(year, months) {
                 {
                     label: `${year}年`,
                     data: thisYearCatData.map(v => v / 10000),
-                    backgroundColor: '#1f6fb2',
-                    borderColor: '#185a92',
+                    backgroundColor: '#4a9cb8',
+                    borderColor: '#3a8ba7',
                     borderWidth: 0,
                     borderRadius: 4,
                     borderSkipped: false,
@@ -2128,7 +2086,7 @@ function renderContainerChartOnly(year, months) {
         totalDisplay.textContent = `全市集装箱量：${regionTotal.toLocaleString('zh-CN')}箱`;
     }
     
-    const colors = ['#1f6fb2', '#3a8fb5', '#7fb3d8', '#2a9d8f', '#c9a15a'];
+    const colors = ['#2c7da0', '#e76f51', '#f4a261', '#e9c46a', '#8ecae6'];
     
     const labelsWithInfo = districtNames.map((label, i) => {
         const val = regionData[i];
@@ -2162,7 +2120,7 @@ function renderContainerChartOnly(year, months) {
             plugins: {
                 legend: {
                     position: 'right',
-                    labels: { font: { size: 12, weight: '500' }, padding: 14, usePointStyle: true, pointStyleWidth: 10, color: '#10263d' }
+                    labels: { font: { size: 12, weight: '500' }, padding: 14, usePointStyle: true, pointStyleWidth: 10, color: '#1a3a4a' }
                 },
                 tooltip: {
                     backgroundColor: 'rgba(26,58,74,0.9)',
@@ -2260,7 +2218,7 @@ function renderCategoryChartOnly(year, months) {
             plugins: {
                 legend: {
                     position: 'right',
-                    labels: { font: { size: 11, weight: '500' }, padding: 10, usePointStyle: true, pointStyleWidth: 10, color: '#10263d' }
+                    labels: { font: { size: 11, weight: '500' }, padding: 10, usePointStyle: true, pointStyleWidth: 10, color: '#1a3a4a' }
                 },
                 tooltip: {
                     backgroundColor: 'rgba(26,58,74,0.9)',
@@ -2350,7 +2308,7 @@ function renderTplEditor() {
     
     if (isCollapsed) {
         html += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">`;
-        html += `<div style="font-size:0.88rem;font-weight:600;color:#10263d;">当前模板：${esc(tpl.name)}</div>`;
+        html += `<div style="font-size:0.88rem;font-weight:600;color:#1a3a4a;">当前模板：${esc(tpl.name)}</div>`;
         html += `<button class="btn btn-sm" onclick="expandTplEditor()">自定义修改</button>`;
         html += `</div>`;
         html += '</div>';
@@ -2772,7 +2730,7 @@ function updateLoginStatus() {
         el.innerHTML = `👤 ${esc(currentAdmin.username)} <span style="color:#c0392b;">[退出]</span>`;
         el.title = '点击退出登录';
     } else {
-            el.innerHTML = `<span style="color:#1f6fb2;">[登录]</span>`;
+            el.innerHTML = `<span style="color:#2c7da0;">[登录]</span>`;
         el.title = '点击登录';
     }
 }
@@ -3609,7 +3567,7 @@ function initTrendChart() {
             trigger: 'axis',
             axisPointer: { type: 'shadow' },
             backgroundColor: 'rgba(26,58,74,0.95)',
-            borderColor: '#1f6fb2',
+            borderColor: '#2c7da0',
             borderWidth: 1,
             textStyle: { color: '#f0f3f8', fontSize: 12 },
             formatter: function(params) {
@@ -3670,8 +3628,8 @@ function initTrendChart() {
                         type: 'linear',
                         x: 0, y: 0, x2: 0, y2: 1,
                         colorStops: [
-                            { offset: 0, color: '#4a90c4' },
-                            { offset: 1, color: '#1f6fb2' }
+                            { offset: 0, color: '#4a9cb8' },
+                            { offset: 1, color: '#2c7da0' }
                         ]
                     },
                     borderRadius: [4, 4, 0, 0]
@@ -3687,7 +3645,7 @@ function initTrendChart() {
                     fontWeight: '500'
                 },
                 emphasis: {
-                    itemStyle: { shadowBlur: 10, shadowColor: 'rgba(31,111,178,0.25)' }
+                    itemStyle: { shadowBlur: 10, shadowColor: 'rgba(44,125,160,0.3)' }
                 }
             },
             {
@@ -3699,10 +3657,10 @@ function initTrendChart() {
                 symbolSize: 6,
                 lineStyle: {
                     width: 2.5,
-                    color: '#c9a15a'
+                    color: '#e8913e'
                 },
                 itemStyle: {
-                    color: '#c9a15a',
+                    color: '#e8913e',
                     borderColor: '#fff',
                     borderWidth: 2
                 },
@@ -3727,7 +3685,7 @@ function initTrendChart() {
                 height: 16,
                 handleSize: '80%',
                 backgroundColor: '#eef2f7',
-                fillerColor: 'rgba(31,111,178,0.15)',
+                fillerColor: 'rgba(44,125,160,0.15)',
                 textStyle: { color: '#7f8fa4', fontSize: 10 }
             }
         ]
