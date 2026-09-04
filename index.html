@@ -1454,7 +1454,7 @@ async function parseExcelFile(file) {
         let rec = parseSheetRows(rows, sn, fn);
         if (rec.length === 0) { rec = parseSheetRows(raw, sn, fn); }
         if (rec.length === 0 && rows.length >= 3) {
-            const headerText = rows.slice(0, 10).flat().join(' ');
+            const headerText = [].concat.apply([], rows.slice(0, 10)).join(' ');
             if (!detectPeriod(headerText)) {
                 skippedSheets.push(sn);
             }

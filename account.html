@@ -162,7 +162,7 @@ async function addAccount() {
         // Check if first account -> super_admin
         const countUrl = `${SUPABASE_URL}/rest/v1/${ACCOUNTS_TABLE}?select=id&limit=1`;
         const countResp = await fetch(countUrl, { headers: sbHeaders({ 'Prefer': 'count=exact' }) });
-        const isFirst = !countResp.ok || parseInt(countResp.headers.get('Content-Range')?.split('/')[1] || '0') === 0;
+        const isFirst = !countResp.ok || parseInt((countResp.headers.get('Content-Range') || '').split('/')[1] || '0') === 0;
         const role = isFirst ? 'super_admin' : 'admin';
         const url = `${SUPABASE_URL}/rest/v1/${ACCOUNTS_TABLE}`;
         const resp = await fetch(url, {
@@ -242,7 +242,7 @@ async function createFirstAdmin() {
         const url = `${SUPABASE_URL}/rest/v1/${ACCOUNTS_TABLE}?select=id&limit=1`;
         const resp = await fetch(url, { headers: sbHeaders({ 'Prefer': 'count=exact' }) });
         if (!resp.ok) return;
-        const count = parseInt(resp.headers.get('Content-Range')?.split('/')[1] || '1');
+        const count = parseInt((resp.headers.get('Content-Range') || '').split('/')[1] || '1');
         if (count === 0) {
             document.getElementById('loginArea').classList.add('hidden');
             document.getElementById('firstSetupArea').classList.remove('hidden');
