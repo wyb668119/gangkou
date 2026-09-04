@@ -319,21 +319,20 @@
                         <h3>全市分类货物吞吐量</h3>
                         <div class="period-row" style="margin-bottom:8px;">
                             <label style="font-size:0.75rem;">时间段：</label>
-                            <select id="categoryPeriodStart" style="width:100px;font-size:0.75rem;"></select>
+                            <select id="categoryPeriodStart" style="min-width:120px;font-size:0.75rem;"></select>
                             <span style="font-size:0.75rem;margin:0 4px;">至</span>
-                            <select id="categoryPeriodEnd" style="width:100px;font-size:0.75rem;"></select>
+                            <select id="categoryPeriodEnd" style="min-width:120px;font-size:0.75rem;"></select>
                         </div>
                         <div class="chart-sub" id="categoryChartSub"></div>
-                        <div id="categoryTotalDisplay" style="text-align:center;font-size:0.85rem;color:#1a3a4a;font-weight:600;margin-bottom:8px;"></div>
                         <canvas id="categoryChart"></canvas>
                     </div>
                     <div class="chart-box">
                         <h3>各区县累计吞吐量</h3>
                         <div class="period-row" style="margin-bottom:8px;">
                             <label style="font-size:0.75rem;">时间段：</label>
-                            <select id="regionPeriodStart" style="width:100px;font-size:0.75rem;"></select>
+                            <select id="regionPeriodStart" style="min-width:120px;font-size:0.75rem;"></select>
                             <span style="font-size:0.75rem;margin:0 4px;">至</span>
-                            <select id="regionPeriodEnd" style="width:100px;font-size:0.75rem;"></select>
+                            <select id="regionPeriodEnd" style="min-width:120px;font-size:0.75rem;"></select>
                         </div>
                         <div class="chart-sub" id="regionChartSub"></div>
                         <canvas id="regionChart"></canvas>
@@ -344,9 +343,9 @@
                         <h3>吞吐量同比分析</h3>
                         <div class="period-row" style="margin-bottom:8px;">
                             <label style="font-size:0.75rem;">时间段：</label>
-                            <select id="yoyPeriodStart" style="width:100px;font-size:0.75rem;"></select>
+                            <select id="yoyPeriodStart" style="min-width:120px;font-size:0.75rem;"></select>
                             <span style="font-size:0.75rem;margin:0 4px;">至</span>
-                            <select id="yoyPeriodEnd" style="width:100px;font-size:0.75rem;"></select>
+                            <select id="yoyPeriodEnd" style="min-width:120px;font-size:0.75rem;"></select>
                         </div>
                         <div class="chart-sub" id="yoyChartSub"></div>
                         <canvas id="yoyChart"></canvas>
@@ -355,12 +354,11 @@
                         <h3>各区县集装箱量</h3>
                         <div class="period-row" style="margin-bottom:8px;">
                             <label style="font-size:0.75rem;">时间段：</label>
-                            <select id="containerPeriodStart" style="width:100px;font-size:0.75rem;"></select>
+                            <select id="containerPeriodStart" style="min-width:120px;font-size:0.75rem;"></select>
                             <span style="font-size:0.75rem;margin:0 4px;">至</span>
-                            <select id="containerPeriodEnd" style="width:100px;font-size:0.75rem;"></select>
+                            <select id="containerPeriodEnd" style="min-width:120px;font-size:0.75rem;"></select>
                         </div>
                         <div class="chart-sub" id="containerChartSub"></div>
-                        <div id="containerTotalDisplay" style="text-align:center;font-size:0.85rem;color:#1a3a4a;font-weight:600;margin-bottom:8px;"></div>
                         <canvas id="containerChart"></canvas>
                     </div>
                 </div>
@@ -1672,6 +1670,35 @@ async function deleteSelectedContainerMonths() {
 
 let regionChartInst = null, categoryChartInst = null, yoyChartInst = null;
 
+// 千分位格式的"万吨"值（用于环形图中心总计）
+function toWanFmt(val) {
+    return Number(toWan(val)).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// 环形图中心文字插件：在圆心显示累计总量
+function donutCenterPlugin(valueText, unitText) {
+    return {
+        id: 'donutCenter',
+        afterDraw(chart) {
+            const ca = chart.chartArea;
+            if (!ca || !valueText) return;
+            const ctx = chart.ctx;
+            const x = (ca.left + ca.right) / 2;
+            const y = (ca.top + ca.bottom) / 2;
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#1a3a4a';
+            ctx.font = "600 19px 'Segoe UI', 'Microsoft YaHei', sans-serif";
+            ctx.fillText(valueText, x, y - 8);
+            ctx.fillStyle = '#7f8fa4';
+            ctx.font = "11px 'Segoe UI', 'Microsoft YaHei', sans-serif";
+            ctx.fillText(unitText, x, y + 12);
+            ctx.restore();
+        }
+    };
+}
+
 const CHART_COLORS = ['#2c7da0','#e76f51','#2a9d8f','#e9c46a','#6930c3','#f4a261','#264653','#d62828','#6a994e','#9b5de5','#00bbf9','#f15bb5','#fee440','#00f5d4','#3a86ff','#fb8500'];
 
 function toWan(val) { return (val / 10000).toFixed(2); }
@@ -1859,6 +1886,7 @@ function renderRegionChartOnly(year, months) {
     if (regionChartInst) regionChartInst.destroy();
     regionChartInst = new Chart(document.getElementById('regionChart'), {
         type: 'doughnut',
+        plugins: regionTotal > 0 ? [donutCenterPlugin(toWanFmt(regionTotal), '累计 · 万吨')] : [],
         data: {
             labels: regionLabels,
             datasets: [{
@@ -1956,6 +1984,7 @@ function renderYoyChartOnly(year, months) {
                     borderWidth: 0,
                     borderRadius: 4,
                     borderSkipped: false,
+                    maxBarThickness: 22,
                     barPercentage: 0.7,
                     categoryPercentage: 0.8
                 },
@@ -1967,6 +1996,7 @@ function renderYoyChartOnly(year, months) {
                     borderWidth: 0,
                     borderRadius: 4,
                     borderSkipped: false,
+                    maxBarThickness: 22,
                     barPercentage: 0.7,
                     categoryPercentage: 0.8
                 }
@@ -1985,12 +2015,13 @@ function renderYoyChartOnly(year, months) {
                 x: {
                     beginAtZero: true,
                     title: { display: false },
-                    ticks: { font: { size: 10 }, color: '#7f8fa4', maxRotation: 0 },
-                    grid: { display: false }
+                    ticks: { font: { size: 11 }, color: '#7f8fa4', maxRotation: 0 },
+                    grid: { color: '#eef2f7' },
+                    border: { color: '#c8d6e0' }
                 },
                 y: {
                     ticks: {
-                        font: { size: 11 },
+                        font: { size: 12, weight: '500' },
                         autoSkip: false,
                         padding: 8,
                         color: function(context) {
@@ -2007,7 +2038,7 @@ function renderYoyChartOnly(year, months) {
                 legend: { 
                     position: 'top', 
                     align: 'end',
-                    labels: { font: { size: 11 }, padding: 16, usePointStyle: true, pointStyleWidth: 8, color: '#4a627a' } 
+                    labels: { font: { size: 12 }, padding: 16, usePointStyle: true, pointStyleWidth: 10, color: '#4a627a' } 
                 },
                 tooltip: {
                     backgroundColor: 'rgba(26,58,74,0.95)',
@@ -2080,28 +2111,27 @@ function renderContainerChartOnly(year, months) {
             .reduce((sum, r) => sum + (r.value || 0), 0);
     });
     const regionTotal = regionData.reduce((s, v) => s + v, 0);
-    
-    const totalDisplay = document.getElementById('containerTotalDisplay');
-    if (totalDisplay) {
-        totalDisplay.textContent = `全市集装箱量：${regionTotal.toLocaleString('zh-CN')}箱`;
-    }
-    
+
+    // 过滤零值区域，避免图例出现"0.0% 0箱"
     const colors = ['#2c7da0', '#e76f51', '#f4a261', '#e9c46a', '#8ecae6'];
-    
-    const labelsWithInfo = districtNames.map((label, i) => {
-        const val = regionData[i];
-        const pct = regionTotal > 0 ? (val / regionTotal * 100).toFixed(1) : '0.0';
-        return `${label}  ${pct}%  ${val.toLocaleString('zh-CN')}箱`;
+    const entries = districtNames
+        .map((name, i) => ({ name, val: regionData[i], color: colors[i] }))
+        .filter(e => e.val > 0);
+
+    const labelsWithInfo = entries.map(e => {
+        const pct = regionTotal > 0 ? (e.val / regionTotal * 100).toFixed(1) : '0.0';
+        return `${e.name}  ${pct}%  ${e.val.toLocaleString('zh-CN')}箱`;
     });
 
     if (containerChartInst) containerChartInst.destroy();
     containerChartInst = new Chart(document.getElementById('containerChart'), {
         type: 'doughnut',
+        plugins: regionTotal > 0 ? [donutCenterPlugin(regionTotal.toLocaleString('zh-CN'), '累计 · 箱')] : [],
         data: {
             labels: labelsWithInfo,
             datasets: [{
-                data: regionData,
-                backgroundColor: colors,
+                data: entries.map(e => e.val),
+                backgroundColor: entries.map(e => e.color),
                 borderColor: '#fff',
                 borderWidth: 2,
                 hoverOffset: 10
@@ -2183,16 +2213,14 @@ function renderCategoryChartOnly(year, months) {
         return `${label}  ${pct}%  ${toWan(val)}万吨`;
     });
 
-    // 更新总计显示
-    const totalDisplay = document.getElementById('categoryTotalDisplay');
-    if (totalDisplay) {
-        totalDisplay.textContent = `全市累计吞吐量：${toWan(totalValue)}万吨`;
-    }
+    // 总计显示在环形图圆心
+    const centerPlugins = totalValue > 0 ? [donutCenterPlugin(toWanFmt(totalValue), '累计 · 万吨')] : [];
 
     // 渲染图表
     if (categoryChartInst) categoryChartInst.destroy();
     categoryChartInst = new Chart(document.getElementById('categoryChart'), {
         type: 'doughnut',
+        plugins: centerPlugins,
         data: {
             labels: catLabels,
             datasets: [{
