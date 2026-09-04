@@ -3399,64 +3399,54 @@ document.getElementById('modeSelect').addEventListener('change', function() { do
         if (loadingPct) loadingPct.textContent = Math.round(pct) + '%';
         if (loadingTip && tip) loadingTip.textContent = tip;
     }
+    function releasePage() {
+        if (pageLoadingEl) { pageLoadingEl.style.opacity = '0'; pageLoadingEl.style.transition = 'opacity 0.4s'; setTimeout(() => { pageLoadingEl.style.display = 'none'; }, 400); }
+        updateLoginStatus();
+    }
 
-    updateLoading(5, '正在初始化…');
+    updateLoading(10, '正在加载图表库…');
 
-    // 按步骤更新进度，让用户看到实际加载进展
+    // ── 第1步：图表库并行加载（本地文件，就绪后立即放行首屏，不等云端数据）──
     try {
-        // ── 第1步：加载 eCharts（~1MB，最耗时） ──
-        updateLoading(8, '正在加载图表库 eCharts…');
-        await loadScript('lib/echarts.min.js');
-        updateLoading(28, 'eCharts 加载完成，正在加载 Chart.js…');
+        await Promise.all([
+            loadScript('lib/echarts.min.js'),
+            loadScript('lib/chart.umd.min.js')
+        ]);
+    } catch (e) {
+        updateLoading(100, '资源加载失败');
+        showMessage('⚠️ 图表库加载失败: ' + e.message, 'error');
+        releasePage();
+        return;
+    }
 
-        // ── 第2步：加载 Chart.js ──
-        await loadScript('lib/chart.umd.min.js');
-        updateLoading(40, '图表库加载完成，正在连接数据库…');
+    updateLoading(100, '加载完成');
+    refreshOverview();
+    renderTplTabs();
+    loadHistoricalTables();
+    loadProvinceIndicatorsFromCloud();
+    releasePage();
 
-        // ── 第3步：并行加载云端数据，各自更新进度 ──
+    // ── 第2步：云端数据后台拉取，完成后二次渲染并提示 ──
+    if (cloudLoadingEl) cloudLoadingEl.style.display = 'block';
+    try {
         const [dataResult, containerResult, templatesResult] = await Promise.all([
-            supabaseTestConnection().then(() => {
-                updateLoading(48, '数据库连接成功，正在加载货物数据…');
-                return loadAllDataFromCloud().then(r => {
-                    updateLoading(68, '货物数据加载完成');
-                    return r;
-                });
-            }),
-            loadContainerDataFromCloud().then(r => {
-                updateLoading(76, '集装箱数据加载完成');
-                return r;
-            }),
-            loadTemplatesFromCloud().then(r => {
-                updateLoading(84, '模板数据加载完成');
-                return r;
-            })
+            loadAllDataFromCloud(),
+            loadContainerDataFromCloud(),
+            loadTemplatesFromCloud()
         ]);
         allData = dataResult;
         containerData = containerResult;
         templates = templatesResult;
-
-        updateLoading(90, '正在渲染页面…');
         refreshOverview();
         renderTplTabs();
-        loadHistoricalTables();
-        loadProvinceIndicatorsFromCloud();
         supabaseGetCategoryCount().then(cnt => {
             const countInfo = cnt >= 0 ? `，共 ${cnt} 条记录` : '';
             showMessage(`✅ Supabase 云端已连接${countInfo}`, 'success');
         });
-    } catch(e) {
-        templates = [];
-        updateLoading(90, '正在渲染页面…');
-        refreshOverview();
-        renderTplTabs();
-        loadHistoricalTables();
-        loadProvinceIndicatorsFromCloud();
+    } catch (e) {
         showMessage('⚠️ Supabase 连接失败: ' + e.message, 'error');
     } finally {
-        updateLoading(100, '加载完成');
-        if (pageLoadingEl) { pageLoadingEl.style.opacity = '0'; pageLoadingEl.style.transition = 'opacity 0.4s'; setTimeout(() => { pageLoadingEl.style.display = 'none'; }, 400); }
         if (cloudLoadingEl) cloudLoadingEl.style.display = 'none';
-        updateLoginStatus();
     }
 })();
 
